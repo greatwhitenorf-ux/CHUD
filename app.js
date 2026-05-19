@@ -833,6 +833,8 @@ async function executeTrade() {
 
                 if (updateErr) throw updateErr;
             }
+        } // Close else if (action === "sell")
+
         // Log the transaction in the trades table
         const { error: logErr } = await supabaseClient
             .from("trades")
