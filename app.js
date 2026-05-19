@@ -646,6 +646,21 @@ async function resetLeagueData() {
     }
 }
 
+// Simple hash-based mock price generator for standard/unsupported assets when backend is offline
+function getMockPrice(symbol) {
+    const clean = symbol.trim().toUpperCase();
+    if (clean === "FUSD") return 1.00;
+    
+    // Hash the symbol name to get a consistent pseudo-random price between $10 and $500
+    let hash = 0;
+    for (let i = 0; i < clean.length; i++) {
+        hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const seed = Math.abs(hash);
+    const price = 10 + (seed % 490) + (seed % 100) / 100;
+    return Math.round(price * 100) / 100;
+}
+
 // Resolve the price of a ticker symbol.
 // If it's cached locally, returns it. Otherwise, calls /api/price to get real-time price and cache it.
 let priceLookupTimeout = null;
@@ -678,9 +693,20 @@ async function resolvePrice(symbol) {
             }
         }
     } catch (e) {
-        console.error("Could not fetch price for symbol:", cleanSymbol, e);
+        console.warn("Could not fetch real-time price from API, falling back to mock price:", cleanSymbol, e);
     }
-    return 0;
+
+    // Fallback to mock price if backend function is offline/fails
+    const fallbackPrice = getMockPrice(cleanSymbol);
+    if (!leagueData.etfPrices) leagueData.etfPrices = {};
+    leagueData.etfPrices[cleanSymbol] = fallbackPrice;
+    
+    if (!ETF_NAMES[cleanSymbol]) {
+        ETF_NAMES[cleanSymbol] = `${cleanSymbol} Stock / ETF`;
+    }
+    
+    updateTradeAssetDropdown();
+    return fallbackPrice;
 }
 
 // Update the pricing reference list in the trade portal modal
