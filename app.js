@@ -24,10 +24,10 @@ const ETF_NAMES = {
 };
 
 const PLAYER_COLORS = {
-    "nate": { border: "hsl(245, 82%, 67%)", bg: "rgba(99, 102, 241, 0.1)" },
-    "alice": { border: "hsl(162, 85%, 45%)", bg: "rgba(16, 185, 129, 0.1)" },
-    "bob": { border: "hsl(342, 85%, 58%)", bg: "rgba(239, 68, 68, 0.1)" },
-    "charlie": { border: "hsl(45, 95%, 50%)", bg: "rgba(245, 158, 11, 0.1)" }
+    "nate": { border: "#38bdf8", bg: "rgba(56, 189, 248, 0.1)" },
+    "alice": { border: "#22c55e", bg: "rgba(34, 197, 94, 0.1)" },
+    "bob": { border: "#ef4444", bg: "rgba(239, 68, 68, 0.1)" },
+    "charlie": { border: "#facc15", bg: "rgba(250, 204, 21, 0.1)" }
 };
 
 // Initialize Application
@@ -87,22 +87,25 @@ async function loadLeagueData() {
 
     try {
         // Query the tables concurrently
-        const [playersRes, basketsRes, pricesRes, historyRes] = await Promise.all([
+        const [playersRes, basketsRes, pricesRes, historyRes, tradesRes] = await Promise.all([
             supabaseClient.from("players").select("*"),
             supabaseClient.from("baskets").select("*"),
             supabaseClient.from("etf_prices").select("*"),
-            supabaseClient.from("history").select("*")
+            supabaseClient.from("history").select("*"),
+            supabaseClient.from("trades").select("*").order("created_at", { ascending: false }).limit(30)
         ]);
 
         if (playersRes.error) throw playersRes.error;
         if (basketsRes.error) throw basketsRes.error;
         if (pricesRes.error) throw pricesRes.error;
         if (historyRes.error) throw historyRes.error;
+        if (tradesRes.error) throw tradesRes.error;
 
         const players = playersRes.data;
         const baskets = basketsRes.data;
         const etfPrices = pricesRes.data;
         const history = historyRes.data;
+        const trades = tradesRes.data;
 
         // 1. Map players and nested portfolios
         const playersList = players.map(p => {
@@ -146,6 +149,7 @@ async function loadLeagueData() {
             players: playersList,
             etfPrices: etfPricesMap,
             history: historyList,
+            trades: trades,
             lastUpdated: maxLastUpdated
         };
 
@@ -223,6 +227,9 @@ function renderDashboard() {
 
     // 5. Render Settings Info
     renderSettingsList(playersCalculated);
+
+    // 6. Render Activity Feed
+    renderActivityFeed(leagueData.trades);
 }
 
 // Render Leaderboard Podium
@@ -335,7 +342,7 @@ function renderChart(players) {
             pointRadius: 4,
             pointHoverRadius: 6,
             pointBackgroundColor: colorConfig.border,
-            pointBorderColor: "#0d1222"
+            pointBorderColor: "#ffffff"
         };
     });
 
@@ -356,18 +363,20 @@ function renderChart(players) {
                 legend: {
                     position: "top",
                     labels: {
-                        color: "#94a3b8",
-                        font: { family: "Plus Jakarta Sans", weight: "600", size: 11 },
+                        color: "#1e293b",
+                        font: { family: "Fredoka", weight: "700", size: 12 },
                         boxWidth: 12,
                         usePointStyle: true
                     }
                 },
                 tooltip: {
-                    backgroundColor: "#0d1222",
-                    titleColor: "#f8fafc",
-                    bodyColor: "#94a3b8",
-                    borderColor: "rgba(255, 255, 255, 0.08)",
-                    borderWidth: 1,
+                    backgroundColor: "#ffffff",
+                    titleColor: "#1e293b",
+                    bodyColor: "#475569",
+                    borderColor: "#1e293b",
+                    borderWidth: 3,
+                    titleFont: { family: "Fredoka", weight: "700" },
+                    bodyFont: { family: "Fredoka" },
                     callbacks: {
                         label: function(context) {
                             return ` ${context.dataset.label}: ${context.raw >= 0 ? "+" : ""}${context.raw.toFixed(2)}%`;
@@ -377,17 +386,17 @@ function renderChart(players) {
             },
             scales: {
                 x: {
-                    grid: { color: "rgba(255, 255, 255, 0.03)" },
+                    grid: { color: "rgba(30, 41, 59, 0.08)" },
                     ticks: {
-                        color: "#94a3b8",
-                        font: { family: "Plus Jakarta Sans", size: 10 }
+                        color: "#1e293b",
+                        font: { family: "Fredoka", size: 11, weight: "600" }
                     }
                 },
                 y: {
-                    grid: { color: "rgba(255, 255, 255, 0.05)" },
+                    grid: { color: "rgba(30, 41, 59, 0.08)" },
                     ticks: {
-                        color: "#94a3b8",
-                        font: { family: "Plus Jakarta Sans", size: 10 },
+                        color: "#1e293b",
+                        font: { family: "Fredoka", size: 11, weight: "600" },
                         callback: function(value) {
                             return (value >= 0 ? "+" : "") + value.toFixed(1) + "%";
                         }
@@ -778,7 +787,18 @@ async function executeTrade() {
 
                 if (updateErr) throw updateErr;
             }
-        }
+        // Log the transaction in the trades table
+        const { error: logErr } = await supabaseClient
+            .from("trades")
+            .insert({
+                player_id: playerId,
+                action: action.toUpperCase(),
+                symbol: symbol,
+                shares: qty,
+                price: price
+            });
+
+        if (logErr) console.error("Could not log trade in database:", logErr);
 
         alert("🎉 Trade executed successfully and leaderboard updated!");
         
@@ -797,4 +817,72 @@ async function executeTrade() {
         submitBtn.disabled = false;
         submitBtn.textContent = "🚀 Confirm Trade";
     }
+}
+
+// Render the activity feed of recent trades below portfolios
+function renderActivityFeed(trades) {
+    const feedContainer = document.getElementById("activity-feed");
+    if (!feedContainer) return;
+
+    if (!trades || trades.length === 0) {
+        feedContainer.innerHTML = `
+            <div style="text-align: center; color: var(--text-secondary); padding: 1.5rem;">
+                No recent trades logged yet.
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+    
+    trades.forEach(trade => {
+        const playerObj = leagueData.players.find(p => p.id === trade.player_id);
+        const name = playerObj ? playerObj.name : trade.player_id;
+        
+        const actionText = trade.action === "BUY" ? "bought" : "sold";
+        const actionClass = trade.action === "BUY" ? "text-success" : "text-danger";
+        const timeAgo = formatTimeAgo(trade.created_at);
+        const sharesFormatted = parseFloat(Number(trade.shares).toFixed(4));
+        
+        const playerColor = PLAYER_COLORS[trade.player_id] || { border: "#6366f1" };
+
+        html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 0.75rem 1rem; border-left: 3px solid ${playerColor.border};">
+                <div style="font-size: 0.9rem; color: #fff;">
+                    <strong style="color: ${playerColor.border}; font-weight: 600;">${name}</strong>
+                    <span style="color: var(--text-secondary);"> ${actionText} </span>
+                    <strong class="${actionClass}">${sharesFormatted.toLocaleString()}</strong> 
+                    <span style="color: var(--text-secondary);">shares of</span> 
+                    <strong>${trade.symbol}</strong> 
+                    <span style="color: var(--text-secondary);">@ $${Number(trade.price).toFixed(2)}</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); min-width: 90px; text-align: right;">
+                    🕒 ${timeAgo}
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    feedContainer.innerHTML = html;
+}
+
+// Format date timestamp into readable human format
+function formatTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return "just now";
+    if (diffMins === 1) return "1 minute ago";
+    if (diffMins < 60) return `${diffMins} minutes ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours === 1) return "1 hour ago";
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return "yesterday";
+    return `${diffDays} days ago`;
 }

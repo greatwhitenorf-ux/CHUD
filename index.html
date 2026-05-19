@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fantasy ETF League 📈</title>
+    <title>Chud ETF 🐶</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Outfit:wght@300..800&family=Plus+Jakarta+Sans:wght@300..800&display=swap" rel="stylesheet">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Supabase Client SDK -->
@@ -18,14 +18,9 @@
     <div class="glow-bg"></div>
     
     <header class="app-header">
-        <div class="header-container">
+        <div class="header-container" style="justify-content: center;">
             <div class="logo-area">
-                <span class="pulse-dot"></span>
-                <h1>Fantasy ETF League</h1>
-            </div>
-            <div class="last-updated-badge">
-                <span class="label">As of Market Close:</span>
-                <span id="update-time" class="time">Loading...</span>
+                <h1 style="font-size: 2.5rem; font-weight: 900; letter-spacing: -0.5px;">🐶 Chud ETF</h1>
             </div>
         </div>
     </header>
@@ -35,9 +30,15 @@
         <section class="overview-section">
             <!-- Podium / Standings Leaderboard -->
             <div class="card podium-card">
-                <div class="card-header">
-                    <h2>🏆 Leaderboard</h2>
-                    <span class="subtitle">Rankings by total return</span>
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                    <div>
+                        <h2>🏆 Leaderboard</h2>
+                        <span class="subtitle">Rankings by total return</span>
+                    </div>
+                    <div class="last-updated-badge" style="font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 12px;">
+                        <span class="label" style="font-size: 0.7rem; font-weight: 500;">As of Market Close:</span>
+                        <span id="update-time" class="time" style="font-size: 0.7rem; font-weight: 700;">Loading...</span>
+                    </div>
                 </div>
                 <div class="podium-container" id="podium">
                     <!-- Dynamic Podium Placement -->
@@ -88,6 +89,18 @@
                             </tr>
                         </tbody>
                     </table>
+            </div>
+
+            <!-- Trade Activity Feed Card -->
+            <div class="card table-card" style="margin-top: 1.5rem;">
+                <div class="card-header">
+                    <h2>🔔 Recent League Activity</h2>
+                    <span class="subtitle">Real-time log of recent transactions placed by players</span>
+                </div>
+                <div class="activity-feed-container" id="activity-feed" style="max-height: 300px; overflow-y: auto; padding: 0.5rem 1rem;">
+                    <div style="text-align: center; color: var(--text-secondary); padding: 1.5rem;">
+                        Loading activity feed...
+                    </div>
                 </div>
             </div>
         </section>
