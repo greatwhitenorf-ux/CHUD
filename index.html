@@ -65,7 +65,10 @@
                         <h2>💼 Player Portfolios</h2>
                         <span class="subtitle">Click on a player to view their basket details</span>
                     </div>
-                    <button class="btn btn-secondary" id="open-settings">⚙️ League Settings</button>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary" id="open-trade" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">💸 Trade Portal</button>
+                        <button class="btn btn-secondary" id="open-settings">⚙️ Settings</button>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="scoreboard-table">
@@ -145,6 +148,90 @@
                         <!-- Dynamic list of players and symbols -->
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trade Portal Modal -->
+    <div class="modal-overlay" id="trade-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>💸 Live Trade Portal</h3>
+                <button class="close-btn" id="close-trade-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Execute instant buys and sells. Trades update the leaderboard and standings in real-time.</p>
+                
+                <div class="settings-group">
+                    <h4>📝 Order Form</h4>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+                        <!-- Player Select -->
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Who is Trading?</label>
+                            <select id="trade-player-select" style="background: #0d1222; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; color: #fff; font-family: var(--font-body); font-size: 0.9rem; width: 100%;">
+                                <option value="nate">Nate</option>
+                                <option value="alice">Alice</option>
+                                <option value="bob">Bob</option>
+                                <option value="charlie">Charlie</option>
+                            </select>
+                        </div>
+
+                        <!-- Action Buy/Sell -->
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Transaction Type</label>
+                            <select id="trade-action-select" style="background: #0d1222; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; color: #fff; font-family: var(--font-body); font-size: 0.9rem; width: 100%;">
+                                <option value="buy">📈 Buy (Spend Cash)</option>
+                                <option value="sell">📉 Sell (Gain Cash)</option>
+                            </select>
+                        </div>
+
+                        <!-- ETF Select -->
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Select Asset</label>
+                            <select id="trade-asset-select" style="background: #0d1222; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; color: #fff; font-family: var(--font-body); font-size: 0.9rem; width: 100%;">
+                                <option value="FUSD">FUSD (Fantasy USD) - $1.00</option>
+                                <option value="SPY">SPY (S&P 500) - Loading...</option>
+                                <option value="QQQ">QQQ (Nasdaq 100) - Loading...</option>
+                                <option value="VOO">VOO (Vanguard S&P) - Loading...</option>
+                                <option value="GLD">GLD (Gold Shares) - Loading...</option>
+                                <option value="SMH">SMH (Semiconductors) - Loading...</option>
+                                <option value="ARKK">ARKK (Innovation ETF) - Loading...</option>
+                                <option value="SCHD">SCHD (Dividends) - Loading...</option>
+                                <option value="BND">BND (Total Bond) - Loading...</option>
+                            </select>
+                        </div>
+
+                        <!-- Quantity -->
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Quantity (Shares)</label>
+                            <input type="number" id="trade-shares-input" placeholder="0" min="0.0001" step="any" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; color: #fff; font-family: var(--font-body); font-size: 0.9rem; width: 100%;">
+                        </div>
+
+                        <!-- Player Security PIN -->
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Enter Player 4-Digit PIN</label>
+                            <input type="password" id="trade-pin-input" placeholder="••••" maxlength="4" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; color: #fff; font-family: var(--font-body); font-size: 0.9rem; width: 100%; text-align: center; letter-spacing: 0.5rem;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Preview & Details -->
+                <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
+                        <span>Available Cash:</span>
+                        <span id="trade-cash-avail" style="font-weight: 600; color: #fff;">$0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
+                        <span>Estimated Value:</span>
+                        <span id="trade-est-cost" style="font-weight: 600; color: #fff;">$0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 0.5rem; margin-top: 0.25rem;">
+                        <span>Estimated Remaining Cash:</span>
+                        <span id="trade-cash-rem" style="font-weight: 600; color: #10b981;">$0.00</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="btn-submit-trade" style="width: 100%; justify-content: center; margin-top: 1.25rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">🚀 Confirm Trade</button>
             </div>
         </div>
     </div>

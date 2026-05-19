@@ -149,6 +149,8 @@ async function loadLeagueData() {
             lastUpdated: maxLastUpdated
         };
 
+        updateTradeAssetDropdown();
+        updateTradeCalculator();
         renderDashboard();
 
     } catch (error) {
@@ -476,6 +478,30 @@ function setupEventListeners() {
         }
     });
 
+    // Trade Portal Modal opening and closing
+    const tradeOverlay = document.getElementById("trade-overlay");
+    document.getElementById("open-trade").addEventListener("click", () => {
+        tradeOverlay.classList.add("active");
+        updateTradeCalculator();
+    });
+    document.getElementById("close-trade-modal").addEventListener("click", () => {
+        tradeOverlay.classList.remove("active");
+    });
+    tradeOverlay.addEventListener("click", (e) => {
+        if (e.target === tradeOverlay) {
+            tradeOverlay.classList.remove("active");
+        }
+    });
+
+    // Trade Portal Calculator Listeners
+    document.getElementById("trade-player-select").addEventListener("change", updateTradeCalculator);
+    document.getElementById("trade-action-select").addEventListener("change", updateTradeCalculator);
+    document.getElementById("trade-asset-select").addEventListener("change", updateTradeCalculator);
+    document.getElementById("trade-shares-input").addEventListener("input", updateTradeCalculator);
+
+    // Trade Submission
+    document.getElementById("btn-submit-trade").addEventListener("click", executeTrade);
+
     // Simulated Pricing buttons (client-side simulation)
     document.getElementById("btn-sync-prices").addEventListener("click", simulatePriceCheck);
     document.getElementById("btn-reset-league").addEventListener("click", resetLeagueData);
@@ -549,5 +575,226 @@ async function resetLeagueData() {
     if (confirm("Reset current screen values? This will discard browser simulation changes and reload the latest official database records from Supabase.")) {
         await loadLeagueData();
         alert("Dashboard reset to match Supabase database values!");
+    }
+}
+
+// Update the dropdown asset list with the current real-time prices
+function updateTradeAssetDropdown() {
+    const assetSelect = document.getElementById("trade-asset-select");
+    if (!assetSelect || !leagueData) return;
+
+    Array.from(assetSelect.options).forEach(opt => {
+        const symbol = opt.value;
+        const price = symbol === "FUSD" ? 1.00 : (leagueData.etfPrices[symbol] || 0.00);
+        const name = ETF_NAMES[symbol] || "Exchange-Traded Fund";
+        opt.textContent = `${symbol} (${name.split(" (")[0]}) - $${price.toFixed(2)}`;
+    });
+}
+
+// Live calculation preview of the trade
+function updateTradeCalculator() {
+    if (!leagueData) return;
+
+    const playerId = document.getElementById("trade-player-select").value;
+    const action = document.getElementById("trade-action-select").value;
+    const symbol = document.getElementById("trade-asset-select").value;
+    const qty = parseFloat(document.getElementById("trade-shares-input").value) || 0;
+
+    const player = leagueData.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    const price = symbol === "FUSD" ? 1.00 : (leagueData.etfPrices[symbol] || 0.00);
+    const estValue = qty * price;
+    
+    let remCash = player.cash;
+    if (action === "buy") {
+        remCash = player.cash - estValue;
+    } else {
+        remCash = player.cash + estValue;
+    }
+
+    document.getElementById("trade-cash-avail").textContent = `$${player.cash.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    document.getElementById("trade-est-cost").textContent = `$${estValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    
+    const remCashEl = document.getElementById("trade-cash-rem");
+    remCashEl.textContent = `$${remCash.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    
+    if (remCash < 0) {
+        remCashEl.style.color = "var(--text-danger)";
+    } else {
+        remCashEl.style.color = "#10b981";
+    }
+}
+
+// Execute buy/sell in Supabase using JavaScript SDK
+async function executeTrade() {
+    if (!supabaseClient) {
+        alert("Supabase is not connected!");
+        return;
+    }
+
+    const playerId = document.getElementById("trade-player-select").value;
+    const action = document.getElementById("trade-action-select").value;
+    const symbol = document.getElementById("trade-asset-select").value;
+    const qty = parseFloat(document.getElementById("trade-shares-input").value);
+    const pin = document.getElementById("trade-pin-input").value.trim();
+
+    if (isNaN(qty) || qty <= 0) {
+        alert("Please enter a valid quantity greater than 0.");
+        return;
+    }
+
+    if (pin.length !== 4) {
+        alert("Please enter your 4-digit security PIN.");
+        return;
+    }
+
+    const submitBtn = document.getElementById("btn-submit-trade");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "⌛ Executing Trade...";
+
+    try {
+        // 1. Fetch player PIN & current cash from Supabase to verify authorization
+        const { data: playerDb, error: playerError } = await supabaseClient
+            .from("players")
+            .select("pin, cash")
+            .eq("id", playerId)
+            .single();
+
+        if (playerError || !playerDb) {
+            throw new Error("Could not verify player. Please check connection.");
+        }
+
+        if (playerDb.pin !== pin) {
+            alert("❌ Invalid Player PIN! Trade rejected.");
+            submitBtn.disabled = false;
+            submitBtn.textContent = "🚀 Confirm Trade";
+            return;
+        }
+
+        const price = symbol === "FUSD" ? 1.00 : (leagueData.etfPrices[symbol] || 0.00);
+        if (price === 0) {
+            throw new Error(`Price for ${symbol} is currently unavailable.`);
+        }
+
+        const totalValue = qty * price;
+        const currentCash = Number(playerDb.cash);
+
+        if (action === "buy") {
+            // Check cash
+            if (currentCash < totalValue) {
+                alert(`❌ Insufficient cash! You need $${totalValue.toFixed(2)} but only have $${currentCash.toFixed(2)}.`);
+                submitBtn.disabled = false;
+                submitBtn.textContent = "🚀 Confirm Trade";
+                return;
+            }
+
+            // Deduct Cash
+            const newCash = currentCash - totalValue;
+            const { error: cashErr } = await supabaseClient
+                .from("players")
+                .update({ cash: newCash })
+                .eq("id", playerId);
+
+            if (cashErr) throw cashErr;
+
+            // Check if they already own this symbol
+            const { data: existingBasket, error: basketFetchErr } = await supabaseClient
+                .from("baskets")
+                .select("*")
+                .eq("player_id", playerId)
+                .eq("symbol", symbol)
+                .maybeSingle();
+
+            if (basketFetchErr) throw basketFetchErr;
+
+            if (existingBasket) {
+                // Update existing holding shares
+                const newShares = Number(existingBasket.shares) + qty;
+                const { error: updateErr } = await supabaseClient
+                    .from("baskets")
+                    .update({ shares: newShares, purchase_price: price }) // Update cost basis to current purchase price
+                    .eq("id", existingBasket.id);
+
+                if (updateErr) throw updateErr;
+            } else {
+                // Insert new holding
+                const { error: insertErr } = await supabaseClient
+                    .from("baskets")
+                    .insert({
+                        player_id: playerId,
+                        symbol: symbol,
+                        shares: qty,
+                        purchase_price: price
+                    });
+
+                if (insertErr) throw insertErr;
+            }
+
+        } else if (action === "sell") {
+            // Check if player owns enough shares
+            const { data: existingBasket, error: basketFetchErr } = await supabaseClient
+                .from("baskets")
+                .select("*")
+                .eq("player_id", playerId)
+                .eq("symbol", symbol)
+                .maybeSingle();
+
+            if (basketFetchErr) throw basketFetchErr;
+
+            if (!existingBasket || Number(existingBasket.shares) < qty) {
+                const owned = existingBasket ? Number(existingBasket.shares) : 0;
+                alert(`❌ Insufficient shares! You want to sell ${qty} shares of ${symbol} but only own ${owned.toFixed(4)} shares.`);
+                submitBtn.disabled = false;
+                submitBtn.textContent = "🚀 Confirm Trade";
+                return;
+            }
+
+            // Add Cash
+            const newCash = currentCash + totalValue;
+            const { error: cashErr } = await supabaseClient
+                .from("players")
+                .update({ cash: newCash })
+                .eq("id", playerId);
+
+            if (cashErr) throw cashErr;
+
+            const remainingShares = Number(existingBasket.shares) - qty;
+
+            if (remainingShares <= 0.0001) {
+                // Sell off everything, delete row
+                const { error: deleteErr } = await supabaseClient
+                    .from("baskets")
+                    .delete()
+                    .eq("id", existingBasket.id);
+
+                if (deleteErr) throw deleteErr;
+            } else {
+                // Reduce shares
+                const { error: updateErr } = await supabaseClient
+                    .from("baskets")
+                    .update({ shares: remainingShares })
+                    .eq("id", existingBasket.id);
+
+                if (updateErr) throw updateErr;
+            }
+        }
+
+        alert("🎉 Trade executed successfully and leaderboard updated!");
+        
+        // Reset modal inputs
+        document.getElementById("trade-shares-input").value = "";
+        document.getElementById("trade-pin-input").value = "";
+        document.getElementById("trade-overlay").classList.remove("active");
+
+        // Reload data
+        await loadLeagueData();
+
+    } catch (e) {
+        console.error("Trade failed:", e);
+        alert(`❌ Trade failed: ${e.message || e}`);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "🚀 Confirm Trade";
     }
 }
