@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chud ETF 🐶</title>
+    <title>Chud ETF 🚀</title>
     <!-- On-Screen Debug Console for Remote Troubleshooting -->
     <script>
         window.addEventListener('error', function(e) {
@@ -38,7 +38,7 @@
     <header class="app-header">
         <div class="header-container" style="justify-content: center;">
             <div class="logo-area">
-                <h1 style="font-size: 2.5rem; font-weight: 900; letter-spacing: -0.5px;">🐶 Chud ETF</h1>
+                <h1 style="font-size: 2.5rem; font-weight: 900; letter-spacing: -0.5px;">🚀 Chud ETF</h1>
             </div>
         </div>
     </header>
@@ -199,37 +199,34 @@
                         <!-- Player Select -->
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Who is Trading?</label>
-                            <select id="trade-player-select">
+                            <select id="trade-player-select" style="padding: 0.75rem; border: 3px solid var(--border-color); border-radius: 12px; background: #fff; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; font-weight: 700; cursor: pointer; box-shadow: 2px 2px 0px var(--border-color);">
                                 <option value="nate">Nate</option>
                                 <option value="alice">Alice</option>
                                 <option value="bob">Bob</option>
-                                <option value="charlie">Charlie</option>
                             </select>
                         </div>
 
                         <!-- Action Buy/Sell -->
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Transaction Type</label>
-                            <select id="trade-action-select">
+                            <select id="trade-action-select" style="padding: 0.75rem; border: 3px solid var(--border-color); border-radius: 12px; background: #fff; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; font-weight: 700; cursor: pointer; box-shadow: 2px 2px 0px var(--border-color);">
                                 <option value="buy">📈 Buy (Spend Cash)</option>
                                 <option value="sell">📉 Sell (Gain Cash)</option>
                             </select>
                         </div>
 
-                        <!-- ETF Select -->
+                        <!-- Ticker Input -->
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Select Asset</label>
-                            <select id="trade-asset-select">
-                                <option value="FUSD">FUSD (Fantasy USD) - $1.00</option>
-                                <option value="SPY">SPY (S&P 500) - Loading...</option>
-                                <option value="QQQ">QQQ (Nasdaq 100) - Loading...</option>
-                                <option value="VOO">VOO (Vanguard S&P) - Loading...</option>
-                                <option value="GLD">GLD (Gold Shares) - Loading...</option>
-                                <option value="SMH">SMH (Semiconductors) - Loading...</option>
-                                <option value="ARKK">ARKK (Innovation ETF) - Loading...</option>
-                                <option value="SCHD">SCHD (Dividends) - Loading...</option>
-                                <option value="BND">BND (Total Bond) - Loading...</option>
-                            </select>
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Ticker Symbol</label>
+                            <input type="text" id="trade-asset-input" placeholder="e.g. FUSD, SPY, QQQ, AAPL" style="padding: 0.75rem; border: 3px solid var(--border-color); border-radius: 12px; background: #fff; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; box-shadow: 2px 2px 0px var(--border-color);" value="FUSD">
+                        </div>
+
+                        <!-- Pricing Reference Panel -->
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Active League Prices Reference</label>
+                            <div id="trade-price-reference" style="border: 3px solid var(--border-color); border-radius: 12px; padding: 0.75rem; background: var(--bg-main); max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; box-shadow: 2px 2px 0px var(--border-color);">
+                                <!-- Loaded dynamically from etf_prices -->
+                            </div>
                         </div>
 
                         <!-- Quantity -->

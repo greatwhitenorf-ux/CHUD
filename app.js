@@ -261,6 +261,19 @@ function renderDashboard() {
 
     // 6. Render Activity Feed
     renderActivityFeed(leagueData.trades);
+
+    // 7. Update Trade Portal player list and price references dynamically
+    const tradePlayerSelect = document.getElementById("trade-player-select");
+    if (tradePlayerSelect) {
+        const currentVal = tradePlayerSelect.value;
+        tradePlayerSelect.innerHTML = playersCalculated.map(p => 
+            `<option value="${p.id}">${p.name}</option>`
+        ).join("");
+        if (currentVal && playersCalculated.some(p => p.id === currentVal)) {
+            tradePlayerSelect.value = currentVal;
+        }
+    }
+    updateTradeAssetDropdown();
 }
 
 // Render Leaderboard Podium
@@ -554,7 +567,7 @@ function setupEventListeners() {
 
     addListener("trade-player-select", "change", updateTradeCalculator);
     addListener("trade-action-select", "change", updateTradeCalculator);
-    addListener("trade-asset-select", "change", updateTradeCalculator);
+    addListener("trade-asset-input", "input", updateTradeCalculator);
     addListener("trade-shares-input", "input", updateTradeCalculator);
 
     addListener("btn-submit-trade", "click", executeTrade);
@@ -633,32 +646,118 @@ async function resetLeagueData() {
     }
 }
 
-// Update the dropdown asset list with the current real-time prices
-function updateTradeAssetDropdown() {
-    const assetSelect = document.getElementById("trade-asset-select");
-    if (!assetSelect || !leagueData) return;
+// Resolve the price of a ticker symbol.
+// If it's cached locally, returns it. Otherwise, calls /api/price to get real-time price and cache it.
+let priceLookupTimeout = null;
+async function resolvePrice(symbol) {
+    if (!symbol) return 0;
+    const cleanSymbol = symbol.trim().toUpperCase();
+    if (cleanSymbol === "FUSD") return 1.00;
 
-    Array.from(assetSelect.options).forEach(opt => {
-        const symbol = opt.value;
-        const price = symbol === "FUSD" ? 1.00 : (leagueData.etfPrices[symbol] || 0.00);
-        const name = ETF_NAMES[symbol] || "Exchange-Traded Fund";
-        opt.textContent = `${symbol} (${name.split(" (")[0]}) - $${price.toFixed(2)}`;
+    // Check local cache
+    if (leagueData && leagueData.etfPrices && leagueData.etfPrices[cleanSymbol]) {
+        return Number(leagueData.etfPrices[cleanSymbol]);
+    }
+
+    try {
+        const response = await fetch(`/api/price?symbol=${cleanSymbol}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data && data.price) {
+                if (!leagueData.etfPrices) leagueData.etfPrices = {};
+                leagueData.etfPrices[cleanSymbol] = data.price;
+                
+                // Add default name if it is new
+                if (!ETF_NAMES[cleanSymbol]) {
+                    ETF_NAMES[cleanSymbol] = `${cleanSymbol} Stock / ETF`;
+                }
+
+                // Refresh reference display in modal
+                updateTradeAssetDropdown();
+                return data.price;
+            }
+        }
+    } catch (e) {
+        console.error("Could not fetch price for symbol:", cleanSymbol, e);
+    }
+    return 0;
+}
+
+// Update the pricing reference list in the trade portal modal
+function updateTradeAssetDropdown() {
+    const refContainer = document.getElementById("trade-price-reference");
+    if (!refContainer || !leagueData) return;
+
+    let html = "";
+    // Show FUSD first
+    html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0.6rem; background: #fff; border: 2px solid var(--border-color); border-radius: 8px; font-size: 0.8rem;">
+            <span style="font-weight: 800;">💵 FUSD (Fantasy USD)</span>
+            <strong style="color: var(--success); font-family: monospace;">$1.00</strong>
+        </div>
+    `;
+
+    // Show other active etf prices in database
+    Object.entries(leagueData.etfPrices || {}).forEach(([symbol, price]) => {
+        if (symbol === "FUSD") return;
+        const name = ETF_NAMES[symbol] || "Stock / ETF";
+        html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0.6rem; background: #fff; border: 2px solid var(--border-color); border-radius: 8px; font-size: 0.8rem;">
+                <span style="font-weight: 800;">🚀 ${symbol} (${name.split(" (")[0]})</span>
+                <strong style="color: var(--text-primary); font-family: monospace;">$${price.toFixed(2)}</strong>
+            </div>
+        `;
     });
+
+    refContainer.innerHTML = html;
 }
 
 // Live calculation preview of the trade
-function updateTradeCalculator() {
+async function updateTradeCalculator() {
     if (!leagueData) return;
 
     const playerId = document.getElementById("trade-player-select").value;
     const action = document.getElementById("trade-action-select").value;
-    const symbol = document.getElementById("trade-asset-select").value;
+    const symbolInput = document.getElementById("trade-asset-input");
+    if (!symbolInput) return;
+    const symbol = symbolInput.value.trim().toUpperCase();
     const qty = parseFloat(document.getElementById("trade-shares-input").value) || 0;
 
     const player = leagueData.players.find(p => p.id === playerId);
     if (!player) return;
 
-    const price = symbol === "FUSD" ? 1.00 : (leagueData.etfPrices[symbol] || 0.00);
+    // Show feedback if price is loading/unsupported
+    const estCostEl = document.getElementById("trade-est-cost");
+    const cashRemEl = document.getElementById("trade-cash-rem");
+    
+    let price = 0;
+    if (symbol !== "") {
+        if (leagueData.etfPrices && leagueData.etfPrices[symbol]) {
+            price = Number(leagueData.etfPrices[symbol]);
+        } else if (symbol === "FUSD") {
+            price = 1.00;
+        } else {
+            if (estCostEl) {
+                estCostEl.textContent = "🔍 Fetching price...";
+                estCostEl.style.color = "var(--text-muted)";
+            }
+            // Debounce the remote fetch request to avoid flooding Yahoo Finance
+            clearTimeout(priceLookupTimeout);
+            priceLookupTimeout = setTimeout(async () => {
+                const resolved = await resolvePrice(symbol);
+                if (resolved > 0) {
+                    updateTradeCalculator(); // Re-calculate with new price
+                } else {
+                    if (estCostEl) {
+                        estCostEl.textContent = "⚠️ Price unavailable";
+                        estCostEl.style.color = "var(--danger)";
+                    }
+                }
+            }, 500);
+            return;
+        }
+    }
+
     const estValue = qty * price;
     
     let remCash = player.cash;
@@ -668,16 +767,21 @@ function updateTradeCalculator() {
         remCash = player.cash + estValue;
     }
 
-    document.getElementById("trade-cash-avail").textContent = `$${player.cash.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    document.getElementById("trade-est-cost").textContent = `$${estValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const cashAvailEl = document.getElementById("trade-cash-avail");
+    if (cashAvailEl) cashAvailEl.textContent = `$${player.cash.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     
-    const remCashEl = document.getElementById("trade-cash-rem");
-    remCashEl.textContent = `$${remCash.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (estCostEl) {
+        estCostEl.textContent = `$${estValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ($${price.toFixed(2)}/sh)`;
+        estCostEl.style.color = "var(--text-primary)";
+    }
     
-    if (remCash < 0) {
-        remCashEl.style.color = "var(--text-danger)";
-    } else {
-        remCashEl.style.color = "#10b981";
+    if (cashRemEl) {
+        cashRemEl.textContent = `$${remCash.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        if (remCash < 0) {
+            cashRemEl.style.color = "var(--danger)";
+        } else {
+            cashRemEl.style.color = "var(--success)";
+        }
     }
 }
 
@@ -690,7 +794,7 @@ async function executeTrade() {
 
     const playerId = document.getElementById("trade-player-select").value;
     const action = document.getElementById("trade-action-select").value;
-    const symbol = document.getElementById("trade-asset-select").value;
+    const symbol = document.getElementById("trade-asset-input").value.trim().toUpperCase();
     const qty = parseFloat(document.getElementById("trade-shares-input").value);
     const pin = document.getElementById("trade-pin-input").value.trim();
 
@@ -727,9 +831,9 @@ async function executeTrade() {
             return;
         }
 
-        const price = symbol === "FUSD" ? 1.00 : (leagueData.etfPrices[symbol] || 0.00);
+        const price = await resolvePrice(symbol);
         if (price === 0) {
-            throw new Error(`Price for ${symbol} is currently unavailable.`);
+            throw new Error(`Price for "${symbol}" is currently unavailable. Please verify the ticker symbol.`);
         }
 
         const totalValue = qty * price;

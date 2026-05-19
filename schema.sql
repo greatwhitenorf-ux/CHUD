@@ -1,9 +1,10 @@
 -- ==========================================================================
 -- FANTASY ETF LEAGUE - DATABASE SCHEMA (SUPABASE POSTGRESQL)
--- Clean start for May 20 with FUSD & Live Trade Portal enabled
+-- Clean start for May 20 with FUSD, Live Trade Portal & Activity Log
 -- ==========================================================================
 
 -- Clean up existing tables
+DROP TABLE IF EXISTS trades CASCADE;
 DROP TABLE IF EXISTS history CASCADE;
 DROP TABLE IF EXISTS baskets CASCADE;
 DROP TABLE IF EXISTS etf_prices CASCADE;
@@ -44,6 +45,17 @@ CREATE TABLE history (
     CONSTRAINT unique_date_player UNIQUE (date, player_id)
 );
 
+-- 5. Create Trades Table (Real-time activity feed)
+CREATE TABLE trades (
+    id SERIAL PRIMARY KEY,
+    player_id TEXT REFERENCES players(id) ON DELETE CASCADE,
+    action TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    shares NUMERIC(12,4) NOT NULL,
+    price NUMERIC(10,2) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ==========================================================================
 -- SECURITY POLICIES (Row Level Security - RLS)
 -- Enables anyone to read, and allows public write access for executing trades.
@@ -53,6 +65,7 @@ ALTER TABLE players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE baskets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE etf_prices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE trades ENABLE ROW LEVEL SECURITY;
 
 -- Players Policies
 CREATE POLICY "Allow public read access on players" ON players FOR SELECT TO anon USING (true);
@@ -68,6 +81,10 @@ CREATE POLICY "Allow public delete on baskets" ON baskets FOR DELETE TO anon USI
 CREATE POLICY "Allow public read access on etf_prices" ON etf_prices FOR SELECT TO anon USING (true);
 CREATE POLICY "Allow public read access on history" ON history FOR SELECT TO anon USING (true);
 
+-- Trades Policies (Allows public insert to log transactions and read for feed)
+CREATE POLICY "Allow public read access on trades" ON trades FOR SELECT TO anon USING (true);
+CREATE POLICY "Allow public insert on trades" ON trades FOR INSERT TO anon WITH CHECK (true);
+
 -- ==========================================================================
 -- SEED INITIAL CLEAN START DATA (FUSD @ $1.00)
 -- ==========================================================================
@@ -76,15 +93,13 @@ CREATE POLICY "Allow public read access on history" ON history FOR SELECT TO ano
 INSERT INTO players (id, name, starting_capital, cash, pin) VALUES
 ('nate', 'Nate', 100000.00, 0.00, '1111'),
 ('alice', 'Alice', 100000.00, 0.00, '2222'),
-('bob', 'Bob', 100000.00, 0.00, '3333'),
-('charlie', 'Charlie', 100000.00, 0.00, '4444');
+('bob', 'Bob', 100000.00, 0.00, '3333');
 
 -- Insert baskets: Everyone holds 100,000 shares of FUSD
 INSERT INTO baskets (player_id, symbol, shares, purchase_price) VALUES
 ('nate', 'FUSD', 100000, 1.00),
 ('alice', 'FUSD', 100000, 1.00),
-('bob', 'FUSD', 100000, 1.00),
-('charlie', 'FUSD', 100000, 1.00);
+('bob', 'FUSD', 100000, 1.00);
 
 -- Insert ETF Prices Cache
 INSERT INTO etf_prices (symbol, current_price, last_updated) VALUES
@@ -94,5 +109,10 @@ INSERT INTO etf_prices (symbol, current_price, last_updated) VALUES
 INSERT INTO history (date, player_id, portfolio_value) VALUES
 ('2026-05-19', 'nate', 100000.00),
 ('2026-05-19', 'alice', 100000.00),
-('2026-05-19', 'bob', 100000.00),
-('2026-05-19', 'charlie', 100000.00);
+('2026-05-19', 'bob', 100000.00);
+
+-- Seed Initial Trades to populate the Activity Feed
+INSERT INTO trades (player_id, action, symbol, shares, price, created_at) VALUES
+('nate', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '15 minutes'),
+('alice', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '10 minutes'),
+('bob', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '5 minutes');
