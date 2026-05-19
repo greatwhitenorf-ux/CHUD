@@ -3,32 +3,32 @@
    ========================================================================== */
 
 :root {
-    --bg-main: #1e40af;                 /* Rich Darker Royal Blue */
+    --bg-main: #f5d0fe;                 /* Candy Pink/Purple base */
     --bg-card: #ffffff;                 /* Clean white cards */
-    --bg-card-hover: #f8fafc;           /* Soft hover slate tint */
-    --border-color: #1e293b;            /* Bold slate outline for cartoon look */
-    --border-color-glow: #ef4444;       /* Focus Clifford Red */
+    --bg-card-hover: #fae8ff;           /* Sweet purple tint */
+    --border-color: #4a044e;            /* Deep Plum border for cartoon outline */
+    --border-color-glow: #ec4899;       /* Sweet Pink Glow */
     
-    /* Playful Colors (Sky blue, Grass Green, Clifford Red, Sun Yellow) */
-    --primary: #2563eb;                 /* Royal Blue button */
-    --success: #22c55e;                 /* Grass Green */
-    --success-bg: rgba(34, 197, 94, 0.15);
-    --danger: #ef4444;                  /* Clifford Red */
-    --danger-bg: rgba(239, 68, 68, 0.15);
-    --warning: #facc15;                 /* Sun Yellow */
-    --warning-bg: rgba(250, 204, 21, 0.15);
+    /* Playful Colors (Sweet Candy Palette) */
+    --primary: #d946ef;                 /* Magenta/Pink Lollipop */
+    --success: #22c55e;                 /* Green Candy */
+    --success-bg: rgba(16, 185, 129, 0.15);
+    --danger: #f43f5e;                  /* Red Heart Candy */
+    --danger-bg: rgba(244, 63, 94, 0.15);
+    --warning: #eab308;                 /* Yellow Banana Candy */
+    --warning-bg: rgba(234, 179, 8, 0.15);
     
-    --text-primary: #1e293b;            /* Dark Slate text */
-    --text-secondary: #475569;
-    --text-muted: #64748b;
+    --text-primary: #4a044e;            /* Deep Plum text */
+    --text-secondary: #701a75;
+    --text-muted: #a21caf;
     
     /* Playful Rounded Typography */
     --font-heading: 'Fredoka', 'Outfit', sans-serif;
     --font-body: 'Fredoka', 'Plus Jakarta Sans', sans-serif;
     
     /* Bold 3D Cartoon Shadow */
-    --card-shadow: 6px 6px 0px 0px #1e293b;
-    --btn-shadow: 4px 4px 0px 0px #1e293b;
+    --card-shadow: 6px 6px 0px 0px #4a044e;
+    --btn-shadow: 4px 4px 0px 0px #4a044e;
     --transition-smooth: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.15);
 }
 
@@ -41,7 +41,7 @@
 
 body {
     background-color: var(--bg-main);
-    background-image: linear-gradient(180deg, #1e40af 0%, #0f172a 100%);
+    background-image: linear-gradient(135deg, #f5d0fe 0%, #d8b4fe 50%, #fda4af 100%);
     background-attachment: fixed;
     color: var(--text-primary);
     font-family: var(--font-body);
@@ -50,6 +50,68 @@ body {
     position: relative;
     padding-bottom: 3rem;
 }
+
+/* Sweet Candy Background Elements */
+.candy-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+@keyframes float-candy {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(6deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes float-bomb {
+    0% { transform: translateY(0px) rotate(-10deg) scale(1); }
+    50% { transform: translateY(-20px) rotate(-5deg) scale(1.05); }
+    100% { transform: translateY(0px) rotate(-10deg) scale(1); }
+}
+
+.floating-candy {
+    position: absolute;
+    font-size: 3.5rem;
+    filter: drop-shadow(4px 4px 0px rgba(74, 4, 78, 0.25));
+    animation: float-candy 5s ease-in-out infinite;
+}
+
+.floating-bomb {
+    position: absolute;
+    animation: float-bomb 6s ease-in-out infinite;
+    filter: drop-shadow(4px 4px 0px rgba(74, 4, 78, 0.25));
+}
+
+.candy-bomb {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ff007f, #7f00ff, #00ffff);
+    border: 4px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 900;
+    font-size: 1.2rem;
+    text-shadow: 2px 2px 0px var(--border-color);
+    box-shadow: 4px 4px 0px 0px var(--border-color);
+    transform: rotate(-10deg);
+}
+
+/* Specific Placements */
+.candy-1 { top: 12%; left: 4%; animation-delay: 0s; }
+.candy-2 { top: 55%; left: 3%; animation-delay: 1.5s; }
+.candy-3 { top: 22%; right: 5%; animation-delay: 0.7s; }
+.candy-4 { top: 70%; right: 4%; animation-delay: 2.2s; }
+.candy-5 { top: 82%; left: 12%; animation-delay: 3s; font-size: 2.5rem; }
+.candy-6 { top: 40%; right: 15%; animation-delay: 1.8s; font-size: 2.5rem; }
 
 /* Hide cosmic glow bags since we are in a bright sky theme */
 .glow-bg {

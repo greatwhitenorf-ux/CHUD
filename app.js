@@ -24,10 +24,10 @@ const ETF_NAMES = {
 };
 
 const PLAYER_COLORS = {
-    "nate": { border: "#38bdf8", bg: "rgba(56, 189, 248, 0.1)" },
-    "alice": { border: "#22c55e", bg: "rgba(34, 197, 94, 0.1)" },
-    "bob": { border: "#ef4444", bg: "rgba(239, 68, 68, 0.1)" },
-    "charlie": { border: "#facc15", bg: "rgba(250, 204, 21, 0.1)" }
+    "dan": { border: "#ec4899", bg: "rgba(236, 72, 153, 0.1)" },     // Candy Pink
+    "zach": { border: "#22c55e", bg: "rgba(34, 197, 94, 0.1)" },     // Candy Green
+    "chris": { border: "#fbbf24", bg: "rgba(251, 191, 36, 0.1)" },    // Candy Yellow
+    "nate": { border: "#a855f7", bg: "rgba(168, 85, 247, 0.1)" }     // Candy Purple
 };
 
 // Initialize Application

@@ -91,15 +91,17 @@ CREATE POLICY "Allow public insert on trades" ON trades FOR INSERT TO anon WITH 
 
 -- Insert Players (Seeded with default PINs)
 INSERT INTO players (id, name, starting_capital, cash, pin) VALUES
-('nate', 'Nate', 100000.00, 0.00, '1111'),
-('alice', 'Alice', 100000.00, 0.00, '2222'),
-('bob', 'Bob', 100000.00, 0.00, '3333');
+('dan', 'Dan', 100000.00, 0.00, '1111'),
+('zach', 'Zach', 100000.00, 0.00, '2222'),
+('chris', 'Chris', 100000.00, 0.00, '3333'),
+('nate', 'Nate', 100000.00, 0.00, '4444');
 
 -- Insert baskets: Everyone holds 100,000 shares of FUSD
 INSERT INTO baskets (player_id, symbol, shares, purchase_price) VALUES
-('nate', 'FUSD', 100000, 1.00),
-('alice', 'FUSD', 100000, 1.00),
-('bob', 'FUSD', 100000, 1.00);
+('dan', 'FUSD', 100000, 1.00),
+('zach', 'FUSD', 100000, 1.00),
+('chris', 'FUSD', 100000, 1.00),
+('nate', 'FUSD', 100000, 1.00);
 
 -- Insert ETF Prices Cache
 INSERT INTO etf_prices (symbol, current_price, last_updated) VALUES
@@ -107,12 +109,14 @@ INSERT INTO etf_prices (symbol, current_price, last_updated) VALUES
 
 -- Insert Starting History Record for May 19 (Day before start)
 INSERT INTO history (date, player_id, portfolio_value) VALUES
-('2026-05-19', 'nate', 100000.00),
-('2026-05-19', 'alice', 100000.00),
-('2026-05-19', 'bob', 100000.00);
+('2026-05-19', 'dan', 100000.00),
+('2026-05-19', 'zach', 100000.00),
+('2026-05-19', 'chris', 100000.00),
+('2026-05-19', 'nate', 100000.00);
 
 -- Seed Initial Trades to populate the Activity Feed
 INSERT INTO trades (player_id, action, symbol, shares, price, created_at) VALUES
-('nate', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '15 minutes'),
-('alice', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '10 minutes'),
-('bob', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '5 minutes');
+('dan', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '20 minutes'),
+('zach', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '15 minutes'),
+('chris', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '10 minutes'),
+('nate', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '5 minutes');
