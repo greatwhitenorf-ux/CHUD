@@ -12,6 +12,7 @@ let chartInstance = null;
 let supabaseClient = null;
 
 const ETF_NAMES = {
+    "FUSD": "Fantasy USD Placeholder ETF",
     "SPY": "SPDR S&P 500 ETF Trust",
     "QQQ": "Invesco QQQ Trust (Nasdaq 100)",
     "VOO": "Vanguard S&P 500 ETF",
