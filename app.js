@@ -462,10 +462,6 @@ function setupEventListeners() {
 
     const settingsOverlay = document.getElementById("settings-overlay");
     document.getElementById("open-settings").addEventListener("click", () => {
-        // Pre-populate input fields
-        const { url, key } = getSupabaseCredentials();
-        document.getElementById("supabase-url-input").value = url;
-        document.getElementById("supabase-key-input").value = key;
         settingsOverlay.classList.add("active");
     });
     
@@ -477,22 +473,6 @@ function setupEventListeners() {
         if (e.target === settingsOverlay) {
             settingsOverlay.classList.remove("active");
         }
-    });
-
-    // Save Supabase credentials
-    document.getElementById("btn-save-supabase").addEventListener("click", () => {
-        const url = document.getElementById("supabase-url-input").value.trim();
-        const key = document.getElementById("supabase-key-input").value.trim();
-
-        if (url) localStorage.setItem("SUPABASE_URL", url);
-        else localStorage.removeItem("SUPABASE_URL");
-
-        if (key) localStorage.setItem("SUPABASE_ANON_KEY", key);
-        else localStorage.removeItem("SUPABASE_ANON_KEY");
-
-        alert("Supabase credentials saved! Reconnecting to database...");
-        settingsOverlay.classList.remove("active");
-        initSupabase();
     });
 
     // Simulated Pricing buttons (client-side simulation)

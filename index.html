@@ -127,24 +127,8 @@
                 <button class="close-btn" id="close-settings">&times;</button>
             </div>
             <div class="modal-body">
-                <p class="modal-description">Manage your league settings. Enter your Supabase credentials to sync with the database, or simulate prices locally in the browser.</p>
+                <p class="modal-description">Manage your league settings. Simulating prices runs locally in-browser only.</p>
                 
-                <div class="settings-group">
-                    <h4>🔌 Supabase Database Connection</h4>
-                    <p class="settings-subtext">Enter your Supabase URL and public Anon Key to load active portfolios, standings, and history.</p>
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
-                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Supabase Project URL</label>
-                            <input type="text" id="supabase-url-input" placeholder="https://your-project-id.supabase.co" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; color: #fff; font-family: var(--font-body); font-size: 0.85rem; width: 100%;">
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Supabase Public Anon Key</label>
-                            <input type="password" id="supabase-key-input" placeholder="your-public-anon-key" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; color: #fff; font-family: var(--font-body); font-size: 0.85rem; width: 100%;">
-                        </div>
-                    </div>
-                    <button class="btn btn-primary btn-sm" id="btn-save-supabase" style="width: 100%; justify-content: center;">💾 Save Database Settings</button>
-                </div>
-
                 <div class="settings-group">
                     <h4>🔄 Local Pricing Simulation</h4>
                     <p class="settings-subtext">Trigger a manual price refresh or reset values to defaults.</p>
