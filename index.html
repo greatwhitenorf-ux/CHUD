@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chud ETF 🐶</title>
+    <!-- On-Screen Debug Console for Remote Troubleshooting -->
+    <script>
+        window.addEventListener('error', function(e) {
+            const debugDiv = document.getElementById('debug-console') || document.createElement('div');
+            debugDiv.id = 'debug-console';
+            debugDiv.style.cssText = 'position:fixed; bottom:15px; right:15px; background:#fee2e2; color:#991b1b; border:3px solid #991b1b; border-radius:12px; padding:15px; z-index:999999; font-family:monospace; font-size:11px; max-width:90vw; max-height:220px; overflow:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.15);';
+            debugDiv.innerHTML = '<strong>🚨 JavaScript Error:</strong><br>' + e.message + '<br><em style="font-size:10px;">at ' + e.filename.split("/").pop() + ':' + e.lineno + ':' + e.colno + '</em>';
+            document.body.appendChild(debugDiv);
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            const debugDiv = document.getElementById('debug-console') || document.createElement('div');
+            debugDiv.id = 'debug-console';
+            debugDiv.style.cssText = 'position:fixed; bottom:15px; right:15px; background:#fee2e2; color:#991b1b; border:3px solid #991b1b; border-radius:12px; padding:15px; z-index:999999; font-family:monospace; font-size:11px; max-width:90vw; max-height:220px; overflow:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.15);';
+            const reason = e.reason && (e.reason.message || JSON.stringify(e.reason) || e.reason);
+            debugDiv.innerHTML = '<strong>🚨 Database Promise Error:</strong><br>' + reason;
+            document.body.appendChild(debugDiv);
+        });
+    </script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
