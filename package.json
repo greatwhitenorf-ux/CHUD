@@ -1,0 +1,9 @@
+{
+  "name": "fantasy-etf-league",
+  "version": "1.0.0",
+  "description": "Fantasy ETF League on Vercel and Supabase",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.4"
+  }
+}

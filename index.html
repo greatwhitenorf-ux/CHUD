@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy ETF League 📈</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase Client SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow-bg"></div>
+    
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo-area">
+                <span class="pulse-dot"></span>
+                <h1>Fantasy ETF League</h1>
+            </div>
+            <div class="last-updated-badge">
+                <span class="label">As of Market Close:</span>
+                <span id="update-time" class="time">Loading...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Dashboard Overview Grid -->
+        <section class="overview-section">
+            <!-- Podium / Standings Leaderboard -->
+            <div class="card podium-card">
+                <div class="card-header">
+                    <h2>🏆 Leaderboard</h2>
+                    <span class="subtitle">Rankings by total return</span>
+                </div>
+                <div class="podium-container" id="podium">
+                    <!-- Dynamic Podium Placement -->
+                    <div class="podium-loading">Loading standings...</div>
+                </div>
+            </div>
+
+            <!-- Performance Timeline Chart -->
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h2>📈 Return Timeline</h2>
+                    <span class="subtitle">Cumulative performance (%) over time</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detailed Scoreboard Table -->
+        <section class="details-section">
+            <div class="card table-card">
+                <div class="card-header flex-header">
+                    <div>
+                        <h2>💼 Player Portfolios</h2>
+                        <span class="subtitle">Click on a player to view their basket details</span>
+                    </div>
+                    <button class="btn btn-secondary" id="open-settings">⚙️ League Settings</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="scoreboard-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Portfolio Value</th>
+                                <th>Total Return</th>
+                                <th>Cash Balance</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scoreboard-body">
+                            <tr>
+                                <td colspan="6" class="text-center">Loading portfolios...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Drawer / Modal for Basket Details (Slide out or expanded) -->
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <div class="drawer" id="basket-drawer">
+        <div class="drawer-header">
+            <div>
+                <h3 id="drawer-player-name">Player Name</h3>
+                <span class="drawer-subtitle" id="drawer-portfolio-value">Portfolio Value</span>
+            </div>
+            <button class="close-btn" id="close-drawer">&times;</button>
+        </div>
+        <div class="drawer-body">
+            <div class="summary-stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">Total Return</span>
+                    <span class="stat-value" id="drawer-total-return">+0.00%</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Cash Reserve</span>
+                    <span class="stat-value" id="drawer-cash-reserve">$0.00</span>
+                </div>
+            </div>
+            
+            <h4 class="section-title">ETF Holdings</h4>
+            <div class="holdings-list" id="drawer-holdings">
+                <!-- Dynamic Holdings items -->
+            </div>
+        </div>
+    </div>
+
+    <!-- League Settings Modal -->
+    <div class="modal-overlay" id="settings-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>⚙️ League Settings</h3>
+                <button class="close-btn" id="close-settings">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Manage your league settings. Enter your Supabase credentials to sync with the database, or simulate prices locally in the browser.</p>
+                
+                <div class="settings-group">
+                    <h4>🔌 Supabase Database Connection</h4>
+                    <p class="settings-subtext">Enter your Supabase URL and public Anon Key to load active portfolios, standings, and history.</p>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Supabase Project URL</label>
+                            <input type="text" id="supabase-url-input" placeholder="https://your-project-id.supabase.co" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; color: #fff; font-family: var(--font-body); font-size: 0.85rem; width: 100%;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Supabase Public Anon Key</label>
+                            <input type="password" id="supabase-key-input" placeholder="your-public-anon-key" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; color: #fff; font-family: var(--font-body); font-size: 0.85rem; width: 100%;">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="btn-save-supabase" style="width: 100%; justify-content: center;">💾 Save Database Settings</button>
+                </div>
+
+                <div class="settings-group">
+                    <h4>🔄 Local Pricing Simulation</h4>
+                    <p class="settings-subtext">Trigger a manual price refresh or reset values to defaults.</p>
+                    <div class="settings-actions">
+                        <button class="btn btn-primary" id="btn-sync-prices">🔄 Simulate Price Check</button>
+                        <button class="btn btn-danger" id="btn-reset-league">⚠️ Reset Scores</button>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h4>👥 Players & Starting Allocations</h4>
+                    <p class="settings-subtext">View allocations for each player. To modify permanently, edit the <code>data.json</code> file in your workspace.</p>
+                    <div class="player-list-settings" id="settings-player-list">
+                        <!-- Dynamic list of players and symbols -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

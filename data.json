@@ -1,0 +1,131 @@
+﻿{
+    "players":  [
+                    {
+                        "id":  "nate",
+                        "name":  "Nate",
+                        "startingCapital":  100000.00,
+                        "cash":  14640.00,
+                        "basket":  [
+                                       {
+                                           "symbol":  "SPY",
+                                           "shares":  100,
+                                           "purchasePrice":  505.20
+                                       },
+                                       {
+                                           "symbol":  "QQQ",
+                                           "shares":  80,
+                                           "purchasePrice":  435.50
+                                       }
+                                   ]
+                    },
+                    {
+                        "id":  "alice",
+                        "name":  "Alice",
+                        "startingCapital":  100000.00,
+                        "cash":  11893.00,
+                        "basket":  [
+                                       {
+                                           "symbol":  "VOO",
+                                           "shares":  120,
+                                           "purchasePrice":  465.10
+                                       },
+                                       {
+                                           "symbol":  "GLD",
+                                           "shares":  150,
+                                           "purchasePrice":  215.30
+                                       }
+                                   ]
+                    },
+                    {
+                        "id":  "bob",
+                        "name":  "Bob",
+                        "startingCapital":  100000.00,
+                        "cash":  21980.00,
+                        "basket":  [
+                                       {
+                                           "symbol":  "SMH",
+                                           "shares":  200,
+                                           "purchasePrice":  220.10
+                                       },
+                                       {
+                                           "symbol":  "ARKK",
+                                           "shares":  800,
+                                           "purchasePrice":  42.50
+                                       }
+                                   ]
+                    },
+                    {
+                        "id":  "charlie",
+                        "name":  "Charlie",
+                        "startingCapital":  100000.00,
+                        "cash":  17640.00,
+                        "basket":  [
+                                       {
+                                           "symbol":  "SCHD",
+                                           "shares":  500,
+                                           "purchasePrice":  78.20
+                                       },
+                                       {
+                                           "symbol":  "BND",
+                                           "shares":  600,
+                                           "purchasePrice":  72.10
+                                       }
+                                   ]
+                    }
+                ],
+    "etfPrices":  {
+                      "SPY":  733.73,
+                      "QQQ":  701.53,
+                      "VOO":  674.59,
+                      "GLD":  411.5,
+                      "SMH":  543.96,
+                      "ARKK":  73.84,
+                      "SCHD":  32.1,
+                      "BND":  72.45
+                  },
+    "history":  [
+                    {
+                        "date":  "2026-05-12",
+                        "nate":  100000.00,
+                        "alice":  100000.00,
+                        "bob":  100000.00,
+                        "charlie":  100000.00
+                    },
+                    {
+                        "date":  "2026-05-13",
+                        "nate":  101250.00,
+                        "alice":  100800.00,
+                        "bob":  99400.00,
+                        "charlie":  100200.00
+                    },
+                    {
+                        "date":  "2026-05-14",
+                        "nate":  102100.00,
+                        "alice":  101500.00,
+                        "bob":  100500.00,
+                        "charlie":  100100.00
+                    },
+                    {
+                        "date":  "2026-05-15",
+                        "nate":  101900.00,
+                        "alice":  102200.00,
+                        "bob":  101200.00,
+                        "charlie":  99800.00
+                    },
+                    {
+                        "date":  "2026-05-18",
+                        "nate":  103400.00,
+                        "alice":  101900.00,
+                        "bob":  103800.00,
+                        "charlie":  99950.00
+                    },
+                    {
+                        "date":  "2026-05-19",
+                        "nate":  144135.4,
+                        "alice":  154568.8,
+                        "bob":  189844,
+                        "charlie":  77160
+                    }
+                ],
+    "lastUpdated":  "2026-05-19T16:31:29-06:00"
+}
