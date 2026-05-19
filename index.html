@@ -67,7 +67,7 @@
                         <span class="subtitle">Click on a player to view their basket details</span>
                     </div>
                     <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-primary" id="open-trade" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">💸 Trade Portal</button>
+                        <button class="btn btn-primary" id="open-trade">💸 Trade Portal</button>
                         <button class="btn btn-secondary" id="open-settings">⚙️ Settings</button>
                     </div>
                 </div>
@@ -181,7 +181,7 @@
                         <!-- Player Select -->
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Who is Trading?</label>
-                            <select id="trade-player-select" style="background: #0d1222; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; color: #fff; font-family: var(--font-body); font-size: 0.9rem; width: 100%;">
+                            <select id="trade-player-select">
                                 <option value="nate">Nate</option>
                                 <option value="alice">Alice</option>
                                 <option value="bob">Bob</option>
@@ -192,7 +192,7 @@
                         <!-- Action Buy/Sell -->
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Transaction Type</label>
-                            <select id="trade-action-select" style="background: #0d1222; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; color: #fff; font-family: var(--font-body); font-size: 0.9rem; width: 100%;">
+                            <select id="trade-action-select">
                                 <option value="buy">📈 Buy (Spend Cash)</option>
                                 <option value="sell">📉 Sell (Gain Cash)</option>
                             </select>
@@ -201,7 +201,7 @@
                         <!-- ETF Select -->
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Select Asset</label>
-                            <select id="trade-asset-select" style="background: #0d1222; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; color: #fff; font-family: var(--font-body); font-size: 0.9rem; width: 100%;">
+                            <select id="trade-asset-select">
                                 <option value="FUSD">FUSD (Fantasy USD) - $1.00</option>
                                 <option value="SPY">SPY (S&P 500) - Loading...</option>
                                 <option value="QQQ">QQQ (Nasdaq 100) - Loading...</option>
@@ -217,34 +217,34 @@
                         <!-- Quantity -->
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Quantity (Shares)</label>
-                            <input type="number" id="trade-shares-input" placeholder="0" min="0.0001" step="any" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; color: #fff; font-family: var(--font-body); font-size: 0.9rem; width: 100%;">
+                            <input type="number" id="trade-shares-input" placeholder="0" min="0.0001" step="any">
                         </div>
 
                         <!-- Player Security PIN -->
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Enter Player 4-Digit PIN</label>
-                            <input type="password" id="trade-pin-input" placeholder="••••" maxlength="4" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; color: #fff; font-family: var(--font-body); font-size: 0.9rem; width: 100%; text-align: center; letter-spacing: 0.5rem;">
+                            <input type="password" id="trade-pin-input" placeholder="••••" maxlength="4" style="text-align: center; letter-spacing: 0.5rem;">
                         </div>
                     </div>
                 </div>
 
                 <!-- Transaction Preview & Details -->
-                <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <div class="stat-box" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; box-shadow: none;">
                     <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
                         <span>Available Cash:</span>
-                        <span id="trade-cash-avail" style="font-weight: 600; color: #fff;">$0.00</span>
+                        <span id="trade-cash-avail" style="font-weight: 700; color: var(--text-primary);">$0.00</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
                         <span>Estimated Value:</span>
-                        <span id="trade-est-cost" style="font-weight: 600; color: #fff;">$0.00</span>
+                        <span id="trade-est-cost" style="font-weight: 700; color: var(--text-primary);">$0.00</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 0.5rem; margin-top: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); border-top: 2px dashed var(--border-color); padding-top: 0.5rem; margin-top: 0.25rem;">
                         <span>Estimated Remaining Cash:</span>
-                        <span id="trade-cash-rem" style="font-weight: 600; color: #10b981;">$0.00</span>
+                        <span id="trade-cash-rem" style="font-weight: 800; color: var(--success);">$0.00</span>
                     </div>
                 </div>
 
-                <button class="btn btn-primary" id="btn-submit-trade" style="width: 100%; justify-content: center; margin-top: 1.25rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">🚀 Confirm Trade</button>
+                <button class="btn btn-primary" id="btn-submit-trade" style="width: 100%; justify-content: center; margin-top: 1.25rem;">🚀 Confirm Trade</button>
             </div>
         </div>
     </div>

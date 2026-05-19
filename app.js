@@ -99,13 +99,17 @@ async function loadLeagueData() {
         if (basketsRes.error) throw basketsRes.error;
         if (pricesRes.error) throw pricesRes.error;
         if (historyRes.error) throw historyRes.error;
-        if (tradesRes.error) throw tradesRes.error;
 
-        const players = playersRes.data;
-        const baskets = basketsRes.data;
-        const etfPrices = pricesRes.data;
-        const history = historyRes.data;
-        const trades = tradesRes.data;
+        const players = playersRes.data || [];
+        const baskets = basketsRes.data || [];
+        const etfPrices = pricesRes.data || [];
+        const history = historyRes.data || [];
+        
+        // Defensively fall back to empty list if trades table doesn't exist yet
+        const trades = (tradesRes && !tradesRes.error) ? (tradesRes.data || []) : [];
+        if (tradesRes && tradesRes.error) {
+            console.warn("Trades table not found or failed to load. Please run schema.sql to initialize it:", tradesRes.error);
+        }
 
         // 1. Map players and nested portfolios
         const playersList = players.map(p => {
@@ -159,10 +163,31 @@ async function loadLeagueData() {
 
     } catch (error) {
         console.error("Database query failed:", error);
+        const errMsg = error.message || JSON.stringify(error) || error;
+
+        // Show failure on the podium
         document.getElementById("podium").innerHTML = `
-            <div class="podium-loading text-danger" style="text-align: center;">
-                ⚠️ Database error: ${error.message || error}<br>
-                Please verify your tables are seeded in Supabase.
+            <div class="podium-loading text-danger" style="text-align: center; font-weight: 700; width: 100%;">
+                ⚠️ Connection Failed
+            </div>
+        `;
+
+        // Show failure on the scoreboard table
+        document.getElementById("scoreboard-body").innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-danger" style="font-weight: 700; padding: 2.5rem; line-height: 1.6;">
+                    ⚠️ Database Query Error: ${errMsg}<br>
+                    <span style="font-weight: 500; font-size: 0.85rem; color: var(--text-secondary);">
+                        Please verify your Supabase database is online, tables are seeded, and credentials are correct.
+                    </span>
+                </td>
+            </tr>
+        `;
+
+        // Show failure on the activity feed
+        document.getElementById("activity-feed").innerHTML = `
+            <div class="text-center text-danger" style="font-weight: 700; padding: 2rem;">
+                ⚠️ Could not load activity feed: ${errMsg}
             </div>
         `;
     }
