@@ -31,10 +31,16 @@ const PLAYER_COLORS = {
 };
 
 // Initialize Application
-document.addEventListener("DOMContentLoaded", () => {
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeApp);
+} else {
+    initializeApp();
+}
+
+function initializeApp() {
     initSupabase();
     setupEventListeners();
-});
+}
 
 // Get Supabase credentials from local storage or hardcoded values
 function getSupabaseCredentials() {
@@ -434,111 +440,126 @@ function renderChart(players) {
 
 // Open Drawer for Player basket details
 function openPlayerDrawer(player) {
-    document.getElementById("drawer-player-name").textContent = player.name + "'s Basket";
-    document.getElementById("drawer-portfolio-value").textContent = `$${player.totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const setElText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    };
+
+    setElText("drawer-player-name", player.name + "'s Basket");
+    setElText("drawer-portfolio-value", `$${player.totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
     
     const returnSign = player.totalReturnPercent >= 0 ? "+" : "";
     const returnEl = document.getElementById("drawer-total-return");
-    returnEl.textContent = `${returnSign}${player.totalReturnPercent.toFixed(2)}%`;
-    returnEl.className = `stat-value ${player.totalReturnPercent >= 0 ? 'text-success' : 'text-danger'}`;
+    if (returnEl) {
+        returnEl.textContent = `${returnSign}${player.totalReturnPercent.toFixed(2)}%`;
+        returnEl.className = `stat-value ${player.totalReturnPercent >= 0 ? 'text-success' : 'text-danger'}`;
+    }
     
-    document.getElementById("drawer-cash-reserve").textContent = `$${player.cash.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    setElText("drawer-cash-reserve", `$${player.cash.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 
     const holdingsContainer = document.getElementById("drawer-holdings");
-    holdingsContainer.innerHTML = "";
+    if (holdingsContainer) {
+        holdingsContainer.innerHTML = "";
 
-    player.basketDetails.forEach(item => {
-        const itemVal = item.shares * item.currentPrice;
-        const initialCost = item.shares * item.purchasePrice;
-        const retPercent = ((item.currentPrice - item.purchasePrice) / item.purchasePrice) * 100;
-        const retSign = retPercent >= 0 ? "+" : "";
-        const textClass = retPercent >= 0 ? "text-success" : "text-danger";
+        player.basketDetails.forEach(item => {
+            const itemVal = item.shares * item.currentPrice;
+            const initialCost = item.shares * item.purchasePrice;
+            const retPercent = ((item.currentPrice - item.purchasePrice) / item.purchasePrice) * 100;
+            const retSign = retPercent >= 0 ? "+" : "";
+            const textClass = retPercent >= 0 ? "text-success" : "text-danger";
 
-        const div = document.createElement("div");
-        div.className = "holding-item";
-        div.innerHTML = `
-            <div class="holding-header">
-                <div>
-                    <span class="holding-sym">${item.symbol}</span>
-                    <span class="holding-qty">(${item.shares} shares)</span>
+            const div = document.createElement("div");
+            div.className = "holding-item";
+            div.innerHTML = `
+                <div class="holding-header">
+                    <div>
+                        <span class="holding-sym">${item.symbol}</span>
+                        <span class="holding-qty">(${item.shares} shares)</span>
+                    </div>
+                    <div class="holding-val-main">$${itemVal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 </div>
-                <div class="holding-val-main">$${itemVal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            </div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary);">${ETF_NAMES[item.symbol] || "Exchange-Traded Fund"}</div>
-            <div class="holding-details-grid">
-                <div class="holding-detail-row">
-                    <span class="label" style="color: var(--text-muted)">Cost:</span>
-                    <span>$${item.purchasePrice.toFixed(2)}</span>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem;">${ETF_NAMES[item.symbol] || "Exchange-Traded Fund"}</div>
+                <div class="holding-details-grid">
+                    <div class="holding-detail-row">
+                        <span class="label" style="color: var(--text-muted)">Cost:</span>
+                        <span>$${item.purchasePrice.toFixed(2)}</span>
+                    </div>
+                    <div class="holding-detail-row">
+                        <span class="label" style="color: var(--text-muted)">Current:</span>
+                        <span>$${item.currentPrice.toFixed(2)}</span>
+                    </div>
+                    <div class="holding-detail-row" style="grid-column: span 2; border-top: 2px dashed var(--border-color); padding-top: 6px; margin-top: 6px;">
+                        <span class="label" style="color: var(--text-muted)">Gain/Loss:</span>
+                        <strong class="${textClass}">${retSign}${(itemVal - initialCost).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${retSign}${retPercent.toFixed(2)}%)</strong>
+                    </div>
                 </div>
-                <div class="holding-detail-row">
-                    <span class="label" style="color: var(--text-muted)">Current:</span>
-                    <span>$${item.currentPrice.toFixed(2)}</span>
-                </div>
-                <div class="holding-detail-row" style="grid-column: span 2; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 4px; margin-top: 4px;">
-                    <span class="label" style="color: var(--text-muted)">Gain/Loss:</span>
-                    <strong class="${textClass}">${retSign}${(itemVal - initialCost).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${retSign}${retPercent.toFixed(2)}%)</strong>
-                </div>
-            </div>
-        `;
-        holdingsContainer.appendChild(div);
-    });
+            `;
+            holdingsContainer.appendChild(div);
+        });
+    }
 
-    document.getElementById("drawer-overlay").classList.add("active");
-    document.getElementById("basket-drawer").classList.add("active");
+    const drawerOverlay = document.getElementById("drawer-overlay");
+    const drawer = document.getElementById("player-drawer") || document.getElementById("basket-drawer");
+    if (drawerOverlay) drawerOverlay.classList.add("active");
+    if (drawer) drawer.classList.add("active");
 }
 
 function closePlayerDrawer() {
-    document.getElementById("drawer-overlay").classList.remove("active");
-    document.getElementById("basket-drawer").classList.remove("active");
+    const drawerOverlay = document.getElementById("drawer-overlay");
+    const drawer = document.getElementById("player-drawer") || document.getElementById("basket-drawer");
+    if (drawerOverlay) drawerOverlay.classList.remove("active");
+    if (drawer) drawer.classList.remove("active");
 }
 
 // Setup listeners & pre-fill input values
 function setupEventListeners() {
-    document.getElementById("close-drawer").addEventListener("click", closePlayerDrawer);
-    document.getElementById("drawer-overlay").addEventListener("click", closePlayerDrawer);
+    const addListener = (id, event, handler) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, handler);
+    };
+
+    addListener("close-drawer", "click", closePlayerDrawer);
+    addListener("drawer-overlay", "click", closePlayerDrawer);
 
     const settingsOverlay = document.getElementById("settings-overlay");
-    document.getElementById("open-settings").addEventListener("click", () => {
-        settingsOverlay.classList.add("active");
-    });
-    
-    document.getElementById("close-settings").addEventListener("click", () => {
-        settingsOverlay.classList.remove("active");
-    });
-    
-    settingsOverlay.addEventListener("click", (e) => {
-        if (e.target === settingsOverlay) {
+    if (settingsOverlay) {
+        addListener("open-settings", "click", () => {
+            settingsOverlay.classList.add("active");
+        });
+        addListener("close-settings", "click", () => {
             settingsOverlay.classList.remove("active");
-        }
-    });
+        });
+        settingsOverlay.addEventListener("click", (e) => {
+            if (e.target === settingsOverlay) {
+                settingsOverlay.classList.remove("active");
+            }
+        });
+    }
 
-    // Trade Portal Modal opening and closing
     const tradeOverlay = document.getElementById("trade-overlay");
-    document.getElementById("open-trade").addEventListener("click", () => {
-        tradeOverlay.classList.add("active");
-        updateTradeCalculator();
-    });
-    document.getElementById("close-trade-modal").addEventListener("click", () => {
-        tradeOverlay.classList.remove("active");
-    });
-    tradeOverlay.addEventListener("click", (e) => {
-        if (e.target === tradeOverlay) {
+    if (tradeOverlay) {
+        addListener("open-trade", "click", () => {
+            tradeOverlay.classList.add("active");
+            updateTradeCalculator();
+        });
+        addListener("close-trade-modal", "click", () => {
             tradeOverlay.classList.remove("active");
-        }
-    });
+        });
+        tradeOverlay.addEventListener("click", (e) => {
+            if (e.target === tradeOverlay) {
+                tradeOverlay.classList.remove("active");
+            }
+        });
+    }
 
-    // Trade Portal Calculator Listeners
-    document.getElementById("trade-player-select").addEventListener("change", updateTradeCalculator);
-    document.getElementById("trade-action-select").addEventListener("change", updateTradeCalculator);
-    document.getElementById("trade-asset-select").addEventListener("change", updateTradeCalculator);
-    document.getElementById("trade-shares-input").addEventListener("input", updateTradeCalculator);
+    addListener("trade-player-select", "change", updateTradeCalculator);
+    addListener("trade-action-select", "change", updateTradeCalculator);
+    addListener("trade-asset-select", "change", updateTradeCalculator);
+    addListener("trade-shares-input", "input", updateTradeCalculator);
 
-    // Trade Submission
-    document.getElementById("btn-submit-trade").addEventListener("click", executeTrade);
-
-    // Simulated Pricing buttons (client-side simulation)
-    document.getElementById("btn-sync-prices").addEventListener("click", simulatePriceCheck);
-    document.getElementById("btn-reset-league").addEventListener("click", resetLeagueData);
+    addListener("btn-submit-trade", "click", executeTrade);
+    addListener("btn-sync-prices", "click", simulatePriceCheck);
+    addListener("btn-reset-league", "click", resetLeagueData);
 }
 
 // Render lists of assets inside the settings tab
@@ -872,16 +893,16 @@ function renderActivityFeed(trades) {
         const playerColor = PLAYER_COLORS[trade.player_id] || { border: "#6366f1" };
 
         html += `
-            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 0.75rem 1rem; border-left: 3px solid ${playerColor.border};">
-                <div style="font-size: 0.9rem; color: #fff;">
-                    <strong style="color: ${playerColor.border}; font-weight: 600;">${name}</strong>
-                    <span style="color: var(--text-secondary);"> ${actionText} </span>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-radius: 8px; padding: 0.75rem 1rem; border-left: 4px solid ${playerColor.border}; margin-bottom: 0.5rem; background: var(--bg-main); border: 3px solid var(--border-color);">
+                <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 600;">
+                    <strong style="color: ${playerColor.border}; font-weight: 800;">${name}</strong>
+                    <span style="color: var(--text-secondary); font-weight: 500;"> ${actionText} </span>
                     <strong class="${actionClass}">${sharesFormatted.toLocaleString()}</strong> 
-                    <span style="color: var(--text-secondary);">shares of</span> 
-                    <strong>${trade.symbol}</strong> 
-                    <span style="color: var(--text-secondary);">@ $${Number(trade.price).toFixed(2)}</span>
+                    <span style="color: var(--text-secondary); font-weight: 500;">shares of</span> 
+                    <strong style="color: var(--text-primary);">${trade.symbol}</strong> 
+                    <span style="color: var(--text-secondary); font-weight: 500;">@ $${Number(trade.price).toFixed(2)}</span>
                 </div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); min-width: 90px; text-align: right;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); min-width: 90px; text-align: right; font-weight: 600;">
                     🕒 ${timeAgo}
                 </div>
             </div>
