@@ -36,13 +36,13 @@ CREATE TABLE etf_prices (
     last_updated TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Create History Table (Daily portfolio snapshot log)
+-- 4. Create History Table (6-hour portfolio snapshot log)
 CREATE TABLE history (
     id SERIAL PRIMARY KEY,
-    date DATE NOT NULL,
+    snapshot_time TIMESTAMPTZ NOT NULL,
     player_id TEXT REFERENCES players(id) ON DELETE CASCADE,
     portfolio_value NUMERIC(12,2) NOT NULL,
-    CONSTRAINT unique_date_player UNIQUE (date, player_id)
+    CONSTRAINT unique_snapshot_player UNIQUE (snapshot_time, player_id)
 );
 
 -- 5. Create Trades Table (Real-time activity feed)
@@ -77,9 +77,14 @@ CREATE POLICY "Allow public insert on baskets" ON baskets FOR INSERT TO anon WIT
 CREATE POLICY "Allow public update on baskets" ON baskets FOR UPDATE TO anon USING (true);
 CREATE POLICY "Allow public delete on baskets" ON baskets FOR DELETE TO anon USING (true);
 
--- ETF Prices & History Policies (Read-only for public, writes reserved for backend service role)
+-- ETF Prices & History Policies (Read and Write access for public/anon role)
 CREATE POLICY "Allow public read access on etf_prices" ON etf_prices FOR SELECT TO anon USING (true);
+CREATE POLICY "Allow public insert on etf_prices" ON etf_prices FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow public update on etf_prices" ON etf_prices FOR UPDATE TO anon USING (true);
+
 CREATE POLICY "Allow public read access on history" ON history FOR SELECT TO anon USING (true);
+CREATE POLICY "Allow public insert on history" ON history FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow public update on history" ON history FOR UPDATE TO anon USING (true);
 
 -- Trades Policies (Allows public insert to log transactions and read for feed)
 CREATE POLICY "Allow public read access on trades" ON trades FOR SELECT TO anon USING (true);
@@ -103,10 +108,10 @@ INSERT INTO etf_prices (symbol, current_price, last_updated) VALUES
 ('FUSD', 1.00, NOW());
 
 -- Insert Starting History Record for May 19
-INSERT INTO history (date, player_id, portfolio_value) VALUES
-('2026-05-19', 'dan', 100000.00),
-('2026-05-19', 'zach', 100000.00),
-('2026-05-19', 'chris', 100000.00),
-('2026-05-19', 'nate', 100000.00);
+INSERT INTO history (snapshot_time, player_id, portfolio_value) VALUES
+('2026-05-19T00:00:00Z', 'dan', 100000.00),
+('2026-05-19T00:00:00Z', 'zach', 100000.00),
+('2026-05-19T00:00:00Z', 'chris', 100000.00),
+('2026-05-19T00:00:00Z', 'nate', 100000.00);
 
 -- Seed Initial Trades: Empty at startup

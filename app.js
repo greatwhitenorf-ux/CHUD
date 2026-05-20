@@ -77,6 +77,12 @@ function initSupabase() {
         const { createClient } = window.supabase;
         supabaseClient = createClient(url, key);
         loadLeagueData();
+
+        // Start background auto-refresh every 5 minutes (300,000 ms)
+        setInterval(() => {
+            console.log("Auto-refreshing dashboard data...");
+            loadLeagueData();
+        }, 300000);
     } catch (e) {
         console.error("Error creating Supabase client:", e);
         document.getElementById("podium").innerHTML = `
@@ -84,6 +90,89 @@ function initSupabase() {
                 ⚠️ Failed to initialize Supabase client. Check console.
             </div>
         `;
+    }
+}
+
+// Calculate current live portfolio values for all players
+function getCalculatedPlayers() {
+    if (!leagueData || !leagueData.players) return [];
+    return leagueData.players.map(player => {
+        let stockValue = 0;
+        player.basket.forEach(item => {
+            const currentPrice = leagueData.etfPrices[item.symbol] || item.purchasePrice;
+            stockValue += item.shares * currentPrice;
+        });
+        return {
+            id: player.id,
+            totalValue: player.cash + stockValue
+        };
+    });
+}
+
+// Record 6-hour history snapshots if they don't already exist for the current block
+async function recordHistorySnapshots(playersCalculated) {
+    if (!supabaseClient || !playersCalculated || playersCalculated.length === 0) return;
+
+    // Determine current 6-hour snapshot block (00:00, 06:00, 12:00, 18:00 UTC)
+    const now = new Date();
+    const hours = now.getUTCHours();
+    const blockHours = Math.floor(hours / 6) * 6;
+    const snapshotDate = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        blockHours,
+        0, 0, 0
+    ));
+    const snapshotTimeISO = snapshotDate.toISOString();
+
+    // Check if we already have this snapshot time in our loaded history list
+    const hasSnapshot = leagueData && leagueData.history && leagueData.history.some(h => {
+        const hTime = new Date(h.date).getTime();
+        return hTime === snapshotDate.getTime();
+    });
+
+    if (hasSnapshot) {
+        console.log("Snapshot for current 6-hour block already exists:", snapshotTimeISO);
+        return;
+    }
+
+    console.log("Recording new 6-hour portfolio snapshot:", snapshotTimeISO);
+
+    try {
+        const rowsToInsert = playersCalculated.map(p => ({
+            snapshot_time: snapshotTimeISO,
+            player_id: p.id,
+            portfolio_value: p.totalValue
+        }));
+
+        const { error } = await supabaseClient
+            .from("history")
+            .insert(rowsToInsert);
+
+        if (error) {
+            console.warn("Failed to insert history snapshots:", error);
+        } else {
+            console.log("Successfully logged history snapshots to database!");
+            // Fetch updated history and re-render the chart immediately
+            const { data: newHistory, error: histErr } = await supabaseClient
+                .from("history")
+                .select("*");
+            if (!histErr && newHistory) {
+                const historyMap = {};
+                newHistory.forEach(h => {
+                    const timeStr = h.snapshot_time;
+                    if (!historyMap[timeStr]) {
+                        historyMap[timeStr] = { date: timeStr };
+                    }
+                    historyMap[timeStr][h.player_id] = Number(h.portfolio_value);
+                });
+                leagueData.history = Object.values(historyMap).sort((a, b) => new Date(a.date) - new Date(b.date));
+                renderDashboard();
+            }
+        }
+    } catch (e) {
+        console.error("Error writing history snapshot:", e);
     }
 }
 
@@ -144,10 +233,10 @@ async function loadLeagueData() {
             }
         });
 
-        // 3. Group history data points by date for Chart.js
+        // 3. Group history data points by snapshot_time for Chart.js
         const historyMap = {};
         history.forEach(h => {
-            const dateStr = h.date;
+            const dateStr = h.snapshot_time;
             if (!historyMap[dateStr]) {
                 historyMap[dateStr] = { date: dateStr };
             }
@@ -181,8 +270,11 @@ async function loadLeagueData() {
             Promise.all(Array.from(uniqueSymbols).map(sym => resolvePrice(sym)))
                 .then(() => {
                     renderDashboard();
+                    recordHistorySnapshots(getCalculatedPlayers());
                 })
                 .catch(err => console.error("Error refreshing live prices on load:", err));
+        } else {
+            recordHistorySnapshots(getCalculatedPlayers());
         }
 
     } catch (error) {
@@ -383,7 +475,15 @@ function renderChart(players) {
     const sortedHistory = [...leagueData.history].sort((a, b) => new Date(a.date) - new Date(b.date));
     const dates = sortedHistory.map(entry => {
         const d = new Date(entry.date);
-        return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+        const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+        if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0) {
+            return dateStr;
+        } else {
+            const h = d.getUTCHours();
+            const ampm = h >= 12 ? "PM" : "AM";
+            const hour12 = h % 12 || 12;
+            return `${dateStr} ${hour12}:00 ${ampm}`;
+        }
     });
 
     const datasets = players.map(player => {
