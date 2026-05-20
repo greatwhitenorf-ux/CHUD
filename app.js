@@ -679,6 +679,23 @@ function getMockPrice(symbol) {
     return Math.round(price * 100) / 100;
 }
 
+// Save resolved price to Supabase etf_prices cache table
+async function savePriceToDb(symbol, price) {
+    if (!supabaseClient) return;
+    try {
+        const cleanSymbol = symbol.trim().toUpperCase();
+        await supabaseClient
+            .from("etf_prices")
+            .upsert({
+                symbol: cleanSymbol,
+                current_price: price,
+                last_updated: new Date().toISOString()
+            }, { onConflict: "symbol" });
+    } catch (e) {
+        console.warn(`Could not save price for ${symbol} to DB:`, e);
+    }
+}
+
 // Resolve the price of a ticker symbol.
 // If it's cached locally, returns it. Otherwise, calls /api/price or falls back to Yahoo Finance via CORS proxy.
 let priceLookupTimeout = null;
@@ -698,15 +715,18 @@ async function resolvePrice(symbol, forceRefresh = false) {
         if (response.ok) {
             const data = await response.json();
             if (data && data.price) {
+                const priceNum = Number(data.price);
                 if (!leagueData.etfPrices) leagueData.etfPrices = {};
-                leagueData.etfPrices[cleanSymbol] = data.price;
+                leagueData.etfPrices[cleanSymbol] = priceNum;
                 
                 if (!ETF_NAMES[cleanSymbol]) {
                     ETF_NAMES[cleanSymbol] = `${cleanSymbol} Stock / ETF`;
                 }
 
                 updateTradeAssetDropdown();
-                return data.price;
+                // Save fetched price back to database cache table asynchronously
+                savePriceToDb(cleanSymbol, priceNum);
+                return priceNum;
             }
         }
     } catch (e) {
@@ -730,6 +750,8 @@ async function resolvePrice(symbol, forceRefresh = false) {
                 }
 
                 updateTradeAssetDropdown();
+                // Save fetched price back to database cache table asynchronously
+                savePriceToDb(cleanSymbol, priceNum);
                 return priceNum;
             }
         }
@@ -737,17 +759,22 @@ async function resolvePrice(symbol, forceRefresh = false) {
         console.warn("Direct CORS proxy fetch failed for:", cleanSymbol, e);
     }
 
-    // 3. Last resort fallback to a mock generator if both are offline
-    const fallbackPrice = getMockPrice(cleanSymbol);
-    if (!leagueData.etfPrices) leagueData.etfPrices = {};
-    leagueData.etfPrices[cleanSymbol] = fallbackPrice;
-    
-    if (!ETF_NAMES[cleanSymbol]) {
-        ETF_NAMES[cleanSymbol] = `${cleanSymbol} Stock / ETF`;
+    // 3. Last resort fallback to a mock generator if both are offline (development only)
+    const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    if (isLocalhost) {
+        const fallbackPrice = getMockPrice(cleanSymbol);
+        if (!leagueData.etfPrices) leagueData.etfPrices = {};
+        leagueData.etfPrices[cleanSymbol] = fallbackPrice;
+        
+        if (!ETF_NAMES[cleanSymbol]) {
+            ETF_NAMES[cleanSymbol] = `${cleanSymbol} Stock / ETF (Mock)`;
+        }
+        
+        updateTradeAssetDropdown();
+        return fallbackPrice;
     }
-    
-    updateTradeAssetDropdown();
-    return fallbackPrice;
+
+    return 0;
 }
 
 // Update the pricing reference list in the trade portal modal
