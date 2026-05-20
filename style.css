@@ -138,6 +138,28 @@ body {
 .ticker-2 { top: 18%; right: 12%; animation-delay: 1.6s; transform: rotate(5deg); }
 .ticker-3 { top: 70%; left: 14%; animation-delay: 0.8s; transform: rotate(8deg); }
 
+/* Logo Title WordArt style */
+.logo-title {
+    font-family: var(--font-heading);
+    font-size: 3.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    background: linear-gradient(to bottom, #ffffff 0%, #fef08a 25%, #facc15 75%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke: 3px var(--border-color);
+    filter: drop-shadow(4px 4px 0px rgba(12, 74, 110, 0.4));
+    display: inline-block;
+    animation: bounce-logo 4s ease-in-out infinite;
+    user-select: none;
+}
+
+@keyframes bounce-logo {
+    0%, 100% { transform: translateY(0px) rotate(-1deg); }
+    50% { transform: translateY(-6px) rotate(1deg); }
+}
+
 /* Hide cosmic glow bags since we are in a bright sky theme */
 .glow-bg {
     display: none;
@@ -145,12 +167,14 @@ body {
 
 /* Header Vibe */
 .app-header {
-    background: #ffffff;
-    border-bottom: 6px solid var(--danger);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 6px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 10;
-    padding: 1rem 2rem;
+    padding: 0.5rem 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
 .header-container {
