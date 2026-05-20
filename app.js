@@ -870,8 +870,8 @@ async function executeTrade() {
         return;
     }
 
-    if (pin.length !== 4) {
-        alert("Please enter your 4-digit security PIN.");
+    if (!pin) {
+        alert("Please enter your secret PIN word.");
         return;
     }
 

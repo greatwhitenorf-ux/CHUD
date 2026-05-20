@@ -89,25 +89,29 @@ CREATE POLICY "Allow public insert on trades" ON trades FOR INSERT TO anon WITH 
 -- SEED INITIAL CLEAN START DATA (FUSD @ $1.00)
 -- ==========================================================================
 
--- Insert Players (Seeded with default PINs)
+-- Insert Players (Seeded with secret words & available cash)
 INSERT INTO players (id, name, starting_capital, cash, pin) VALUES
-('dan', 'Dan', 100000.00, 0.00, '1111'),
-('zach', 'Zach', 100000.00, 0.00, '2222'),
-('chris', 'Chris', 100000.00, 0.00, '3333'),
-('nate', 'Nate', 100000.00, 0.00, '4444');
+('dan', 'Dan', 100000.00, 60000.00, 'daniel'),
+('zach', 'Zach', 100000.00, 70000.00, 'zachary'),
+('chris', 'Chris', 100000.00, 82500.00, 'christian'),
+('nate', 'Nate', 100000.00, 64000.00, 'nathan');
 
--- Insert baskets: Everyone holds 100,000 shares of FUSD
+-- Insert baskets: Seed portfolios totaling $100,000 for each player
 INSERT INTO baskets (player_id, symbol, shares, purchase_price) VALUES
-('dan', 'FUSD', 100000, 1.00),
-('zach', 'FUSD', 100000, 1.00),
-('chris', 'FUSD', 100000, 1.00),
-('nate', 'FUSD', 100000, 1.00);
+('dan', 'SPY', 100, 400.00),     -- $40,000 in SPY
+('zach', 'QQQ', 100, 300.00),    -- $30,000 in QQQ
+('chris', 'VOO', 50, 350.00),    -- $17,500 in VOO
+('nate', 'GLD', 200, 180.00);    -- $36,000 in GLD
 
--- Insert ETF Prices Cache
+-- Insert ETF Prices Cache (Seeding base prices for SPY, QQQ, VOO, GLD)
 INSERT INTO etf_prices (symbol, current_price, last_updated) VALUES
-('FUSD', 1.00, NOW());
+('FUSD', 1.00, NOW()),
+('SPY', 400.00, NOW()),
+('QQQ', 300.00, NOW()),
+('VOO', 350.00, NOW()),
+('GLD', 180.00, NOW());
 
--- Insert Starting History Record for May 19 (Day before start)
+-- Insert Starting History Record for May 19
 INSERT INTO history (date, player_id, portfolio_value) VALUES
 ('2026-05-19', 'dan', 100000.00),
 ('2026-05-19', 'zach', 100000.00),
@@ -116,7 +120,7 @@ INSERT INTO history (date, player_id, portfolio_value) VALUES
 
 -- Seed Initial Trades to populate the Activity Feed
 INSERT INTO trades (player_id, action, symbol, shares, price, created_at) VALUES
-('dan', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '20 minutes'),
-('zach', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '15 minutes'),
-('chris', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '10 minutes'),
-('nate', 'BUY', 'FUSD', 100000, 1.00, NOW() - INTERVAL '5 minutes');
+('dan', 'BUY', 'SPY', 100, 400.00, NOW() - INTERVAL '20 minutes'),
+('zach', 'BUY', 'QQQ', 100, 300.00, NOW() - INTERVAL '15 minutes'),
+('chris', 'BUY', 'VOO', 50, 350.00, NOW() - INTERVAL '10 minutes'),
+('nate', 'BUY', 'GLD', 200, 180.00, NOW() - INTERVAL '5 minutes');

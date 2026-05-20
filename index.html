@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sweet ETF Bonanza 🍭</title>
+    <title>Chud ETF Bonanza 🚀</title>
     <!-- On-Screen Debug Console for Remote Troubleshooting -->
     <script>
         window.addEventListener('error', function(e) {
@@ -33,9 +33,10 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Sweet Bonanza Candy Background -->
+    <!-- Chud Bonanza Floating Background -->
     <div class="candy-background">
-        <div class="floating-candy candy-1">🍭</div>
+        <!-- Floating Rockets / Candies / Fruits -->
+        <div class="floating-candy candy-1">🚀</div>
         <div class="floating-bomb candy-2">
             <div class="candy-bomb">100x</div>
         </div>
@@ -45,6 +46,18 @@
         </div>
         <div class="floating-candy candy-5">❤️</div>
         <div class="floating-candy candy-6">🍇</div>
+        <div class="floating-candy candy-7">🍉</div>
+        <div class="floating-candy candy-8">🍌</div>
+        <div class="floating-candy candy-9">🍓</div>
+        <div class="floating-candy candy-10">🍒</div>
+        <div class="floating-candy candy-11">🍊</div>
+        <div class="floating-candy candy-12">Pineapple 🍍</div>
+        <div class="floating-candy candy-13">🍎</div>
+        
+        <!-- WordArt Tickers -->
+        <div class="floating-wordart ticker-1">$NBIS</div>
+        <div class="floating-wordart ticker-2">$MRVL</div>
+        <div class="floating-wordart ticker-3">$CHUD</div>
     </div>
 
     <div class="glow-bg"></div>
@@ -53,7 +66,7 @@
         <div class="header-container" style="justify-content: center; padding: 1.25rem;">
             <div class="logo-area">
                 <h1 style="font-family: var(--font-heading); font-size: 3rem; font-weight: 900; letter-spacing: -1px; text-shadow: 4px 4px 0px var(--border-color); color: #fff; background: linear-gradient(to bottom, #facc15 0%, #fbbf24 100%); padding: 0.5rem 2rem; border: 4px solid var(--border-color); border-radius: 50px; box-shadow: var(--btn-shadow);">
-                    🍭 Sweet ETF Bonanza
+                    🚀 Chud ETF Bonanza
                 </h1>
             </div>
         </div>
@@ -238,24 +251,16 @@
                             <input type="text" id="trade-asset-input" placeholder="e.g. FUSD, SPY, QQQ, AAPL" style="padding: 0.75rem; border: 3px solid var(--border-color); border-radius: 12px; background: #fff; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; box-shadow: 2px 2px 0px var(--border-color);" value="FUSD">
                         </div>
 
-                        <!-- Pricing Reference Panel -->
-                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Active League Prices Reference</label>
-                            <div id="trade-price-reference" style="border: 3px solid var(--border-color); border-radius: 12px; padding: 0.75rem; background: var(--bg-main); max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; box-shadow: 2px 2px 0px var(--border-color);">
-                                <!-- Loaded dynamically from etf_prices -->
-                            </div>
-                        </div>
-
                         <!-- Quantity -->
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Quantity (Shares)</label>
-                            <input type="number" id="trade-shares-input" placeholder="0" min="0.0001" step="any">
+                            <input type="number" id="trade-shares-input" placeholder="0" min="0.0001" step="any" style="padding: 0.75rem; border: 3px solid var(--border-color); border-radius: 12px; background: #fff; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; font-weight: 700; box-shadow: 2px 2px 0px var(--border-color);">
                         </div>
 
                         <!-- Player Security PIN -->
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Enter Player 4-Digit PIN</label>
-                            <input type="password" id="trade-pin-input" placeholder="••••" maxlength="4" style="text-align: center; letter-spacing: 0.5rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Enter Player Secret PIN Word</label>
+                            <input type="password" id="trade-pin-input" placeholder="Secret Word" style="padding: 0.75rem; border: 3px solid var(--border-color); border-radius: 12px; font-family: inherit; font-size: 0.95rem; font-weight: 700; text-align: center; box-shadow: 2px 2px 0px var(--border-color);">
                         </div>
                     </div>
                 </div>
