@@ -3,14 +3,14 @@
    ========================================================================== */
 
 :root {
-    --bg-main: #f5d0fe;                 /* Candy Pink/Purple base */
+    --bg-main: #bae6fd;                 /* Sky Blue base */
     --bg-card: #ffffff;                 /* Clean white cards */
-    --bg-card-hover: #fae8ff;           /* Sweet purple tint */
-    --border-color: #4a044e;            /* Deep Plum border for cartoon outline */
-    --border-color-glow: #ec4899;       /* Sweet Pink Glow */
+    --bg-card-hover: #f0f9ff;           /* Light blue sky tint */
+    --border-color: #0c4a6e;            /* Deep Sky/Navy border for cartoon outline */
+    --border-color-glow: #38bdf8;       /* Sky Blue Glow */
     
     /* Playful Colors (Sweet Candy Palette) */
-    --primary: #d946ef;                 /* Magenta/Pink Lollipop */
+    --primary: #0284c7;                 /* Rich Sky Blue */
     --success: #22c55e;                 /* Green Candy */
     --success-bg: rgba(16, 185, 129, 0.15);
     --danger: #f43f5e;                  /* Red Heart Candy */
@@ -18,17 +18,17 @@
     --warning: #eab308;                 /* Yellow Banana Candy */
     --warning-bg: rgba(234, 179, 8, 0.15);
     
-    --text-primary: #4a044e;            /* Deep Plum text */
-    --text-secondary: #701a75;
-    --text-muted: #a21caf;
+    --text-primary: #0c4a6e;            /* Deep Sky/Navy text */
+    --text-secondary: #0369a1;
+    --text-muted: #0284c7;
     
     /* Playful Rounded Typography */
     --font-heading: 'Fredoka', 'Outfit', sans-serif;
     --font-body: 'Fredoka', 'Plus Jakarta Sans', sans-serif;
     
     /* Bold 3D Cartoon Shadow */
-    --card-shadow: 6px 6px 0px 0px #4a044e;
-    --btn-shadow: 4px 4px 0px 0px #4a044e;
+    --card-shadow: 6px 6px 0px 0px #0c4a6e;
+    --btn-shadow: 4px 4px 0px 0px #0c4a6e;
     --transition-smooth: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.15);
 }
 
@@ -41,7 +41,7 @@
 
 body {
     background-color: var(--bg-main);
-    background-image: linear-gradient(135deg, #f5d0fe 0%, #d8b4fe 50%, #fda4af 100%);
+    background-image: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
     background-attachment: fixed;
     color: var(--text-primary);
     font-family: var(--font-body);
@@ -307,9 +307,15 @@ body {
 }
 
 .podium-return {
-    font-size: 0.85rem;
-    font-weight: 800;
+    font-size: 1.1rem;
+    font-weight: 900;
     margin-bottom: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: #fff;
+    border: 3px solid var(--border-color);
+    border-radius: 20px;
+    box-shadow: 2px 2px 0px var(--border-color);
+    display: inline-block;
 }
 
 .podium-column {
@@ -866,13 +872,14 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 }
 
 .trend-badge {
-    padding: 0.25rem 0.65rem;
+    padding: 0.4rem 0.9rem;
     border-radius: 30px;
-    font-size: 0.8rem;
+    font-size: 1rem;
     font-weight: 800;
     display: inline-flex;
     align-items: center;
-    border: 2px solid var(--border-color);
+    border: 3px solid var(--border-color);
+    box-shadow: 2px 2px 0px var(--border-color);
 }
 
 .trend-badge.positive {

@@ -682,13 +682,13 @@ function getMockPrice(symbol) {
 // Resolve the price of a ticker symbol.
 // If it's cached locally, returns it. Otherwise, calls /api/price or falls back to Yahoo Finance via CORS proxy.
 let priceLookupTimeout = null;
-async function resolvePrice(symbol) {
+async function resolvePrice(symbol, forceRefresh = false) {
     if (!symbol) return 0;
     const cleanSymbol = symbol.trim().toUpperCase();
     if (cleanSymbol === "FUSD") return 1.00;
 
-    // Check local cache
-    if (leagueData && leagueData.etfPrices && leagueData.etfPrices[cleanSymbol]) {
+    // Check local cache if not force-refreshing
+    if (!forceRefresh && leagueData && leagueData.etfPrices && leagueData.etfPrices[cleanSymbol]) {
         return Number(leagueData.etfPrices[cleanSymbol]);
     }
 
@@ -898,7 +898,7 @@ async function executeTrade() {
             return;
         }
 
-        const price = await resolvePrice(symbol);
+        const price = await resolvePrice(symbol, true);
         if (price === 0) {
             throw new Error(`Price for "${symbol}" is currently unavailable. Please verify the ticker symbol.`);
         }
