@@ -167,6 +167,24 @@ async function loadLeagueData() {
         updateTradeCalculator();
         renderDashboard();
 
+        // Asynchronously fetch and refresh actual real-time prices for all assets in players' baskets
+        const uniqueSymbols = new Set();
+        playersList.forEach(p => {
+            p.basket.forEach(item => {
+                if (item.symbol) {
+                    uniqueSymbols.add(item.symbol.toUpperCase());
+                }
+            });
+        });
+
+        if (uniqueSymbols.size > 0) {
+            Promise.all(Array.from(uniqueSymbols).map(sym => resolvePrice(sym)))
+                .then(() => {
+                    renderDashboard();
+                })
+                .catch(err => console.error("Error refreshing live prices on load:", err));
+        }
+
     } catch (error) {
         console.error("Database query failed:", error);
         const errMsg = error.message || JSON.stringify(error) || error;
@@ -662,7 +680,7 @@ function getMockPrice(symbol) {
 }
 
 // Resolve the price of a ticker symbol.
-// If it's cached locally, returns it. Otherwise, calls /api/price to get real-time price and cache it.
+// If it's cached locally, returns it. Otherwise, calls /api/price or falls back to Yahoo Finance via CORS proxy.
 let priceLookupTimeout = null;
 async function resolvePrice(symbol) {
     if (!symbol) return 0;
@@ -674,6 +692,7 @@ async function resolvePrice(symbol) {
         return Number(leagueData.etfPrices[cleanSymbol]);
     }
 
+    // 1. Try Vercel Serverless Backend API first
     try {
         const response = await fetch(`/api/price?symbol=${cleanSymbol}`);
         if (response.ok) {
@@ -682,21 +701,43 @@ async function resolvePrice(symbol) {
                 if (!leagueData.etfPrices) leagueData.etfPrices = {};
                 leagueData.etfPrices[cleanSymbol] = data.price;
                 
-                // Add default name if it is new
                 if (!ETF_NAMES[cleanSymbol]) {
                     ETF_NAMES[cleanSymbol] = `${cleanSymbol} Stock / ETF`;
                 }
 
-                // Refresh reference display in modal
                 updateTradeAssetDropdown();
                 return data.price;
             }
         }
     } catch (e) {
-        console.warn("Could not fetch real-time price from API, falling back to mock price:", cleanSymbol, e);
+        console.warn("Local backend API offline, attempting direct CORS proxy fetch...");
     }
 
-    // Fallback to mock price if backend function is offline/fails
+    // 2. Fall back to direct Yahoo Finance fetch via a public CORS proxy (useful for local dev/testing)
+    try {
+        const url = `https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?range=1d&interval=1d`;
+        const res = await fetch(url);
+        if (res.ok) {
+            const json = await res.json();
+            const price = json.chart?.result?.[0]?.meta?.regularMarketPrice;
+            if (price !== undefined && price !== null) {
+                const priceNum = Math.round(Number(price) * 100) / 100;
+                if (!leagueData.etfPrices) leagueData.etfPrices = {};
+                leagueData.etfPrices[cleanSymbol] = priceNum;
+                
+                if (!ETF_NAMES[cleanSymbol]) {
+                    ETF_NAMES[cleanSymbol] = `${cleanSymbol} Stock / ETF`;
+                }
+
+                updateTradeAssetDropdown();
+                return priceNum;
+            }
+        }
+    } catch (e) {
+        console.warn("Direct CORS proxy fetch failed for:", cleanSymbol, e);
+    }
+
+    // 3. Last resort fallback to a mock generator if both are offline
     const fallbackPrice = getMockPrice(cleanSymbol);
     if (!leagueData.etfPrices) leagueData.etfPrices = {};
     leagueData.etfPrices[cleanSymbol] = fallbackPrice;
