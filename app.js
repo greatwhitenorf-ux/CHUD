@@ -109,14 +109,14 @@ function getCalculatedPlayers() {
     });
 }
 
-// Record 6-hour history snapshots if they don't already exist for the current block
+// Record 4-hour history snapshots if they don't already exist for the current block
 async function recordHistorySnapshots(playersCalculated) {
     if (!supabaseClient || !playersCalculated || playersCalculated.length === 0) return;
 
-    // Determine current 6-hour snapshot block (00:00, 06:00, 12:00, 18:00 UTC)
+    // Determine current 4-hour snapshot block (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)
     const now = new Date();
     const hours = now.getUTCHours();
-    const blockHours = Math.floor(hours / 6) * 6;
+    const blockHours = Math.floor(hours / 4) * 4;
     const snapshotDate = new Date(Date.UTC(
         now.getUTCFullYear(),
         now.getUTCMonth(),
@@ -133,11 +133,11 @@ async function recordHistorySnapshots(playersCalculated) {
     });
 
     if (hasSnapshot) {
-        console.log("Snapshot for current 6-hour block already exists:", snapshotTimeISO);
+        console.log("Snapshot for current 4-hour block already exists:", snapshotTimeISO);
         return;
     }
 
-    console.log("Recording new 6-hour portfolio snapshot:", snapshotTimeISO);
+    console.log("Recording new 4-hour portfolio snapshot:", snapshotTimeISO);
 
     try {
         const rowsToInsert = playersCalculated.map(p => ({
