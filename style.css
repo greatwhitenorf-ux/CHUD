@@ -550,6 +550,13 @@ body {
     background: #fca5a5;
 }
 
+.drawer-body {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0;
+}
+
 .summary-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
