@@ -498,6 +498,7 @@ body {
     display: flex;
     flex-direction: column;
     transition: right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+    overflow: hidden;
 }
 
 .drawer.active {
@@ -555,6 +556,7 @@ body {
     flex-direction: column;
     flex-grow: 1;
     min-height: 0;
+    overflow: hidden;
 }
 
 .summary-stats-grid {
