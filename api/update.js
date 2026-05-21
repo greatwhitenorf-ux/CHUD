@@ -1,7 +1,113 @@
 // Vercel Serverless Function to update ETF prices and calculate portfolio values
-// Scheduled to run Monday - Friday at market close
+// Scheduled to run every 4 hours daily
 
 import { createClient } from '@supabase/supabase-js';
+
+// Multi-stage price resolver for single symbol fallbacks
+async function resolveSinglePrice(symbol, supabase) {
+  const cleanSymbol = symbol.trim().toUpperCase();
+  if (cleanSymbol === 'FUSD') return 1.00;
+
+  // 1. Try Stooq CSV API
+  try {
+    const url = `https://stooq.com/q/l/?s=${cleanSymbol.toLowerCase()}.us&f=sd2t2ohlcv&h&e=csv`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      signal: AbortSignal.timeout(5000)
+    });
+    if (res.ok) {
+      const text = await res.text();
+      const lines = text.trim().split('\n');
+      if (lines.length >= 2) {
+        const headers = lines[0].split(',');
+        const closeIndex = headers.indexOf('Close');
+        if (closeIndex !== -1) {
+          const data = lines[1].split(',');
+          if (data.length > closeIndex) {
+            const priceStr = data[closeIndex].trim();
+            if (priceStr !== 'N/D') {
+              const price = parseFloat(priceStr);
+              if (!isNaN(price) && price > 0) {
+                return Math.round(price * 100) / 100;
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`Fallback: Stooq failed for ${cleanSymbol}: ${err.message}`);
+  }
+
+  // 2. Try direct Yahoo Finance chart API
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?range=1d&interval=1d`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      signal: AbortSignal.timeout(5000)
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const price = json.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if (price !== undefined && price !== null) {
+        const priceNum = parseFloat(price);
+        if (!isNaN(priceNum) && priceNum > 0) {
+          return Math.round(priceNum * 100) / 100;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`Fallback: Yahoo Direct failed for ${cleanSymbol}: ${err.message}`);
+  }
+
+  // 3. Try Yahoo Finance via AllOrigins proxy
+  try {
+    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?range=1d&interval=1d`;
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`;
+    const res = await fetch(proxyUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      signal: AbortSignal.timeout(6000)
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const price = json.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if (price !== undefined && price !== null) {
+        const priceNum = parseFloat(price);
+        if (!isNaN(priceNum) && priceNum > 0) {
+          return Math.round(priceNum * 100) / 100;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`Fallback: AllOrigins Proxy failed for ${cleanSymbol}: ${err.message}`);
+  }
+
+  // 4. Try existing price in cache as last resort
+  if (supabase) {
+    try {
+      const { data: cached } = await supabase
+        .from('etf_prices')
+        .select('current_price')
+        .eq('symbol', cleanSymbol)
+        .single();
+
+      if (cached && cached.current_price) {
+        console.warn(`Fallback: Using cached price for ${cleanSymbol}`);
+        return Number(cached.current_price);
+      }
+    } catch (e) {
+      console.error(`Error reading cached price for ${cleanSymbol}:`, e);
+    }
+  }
+
+  throw new Error(`Failed to resolve price for ${cleanSymbol}`);
+}
 
 export default async function handler(request, response) {
   // 1. Authenticate the Cron request in production
@@ -38,58 +144,68 @@ export default async function handler(request, response) {
     const symbols = [...new Set(baskets.map(item => item.symbol.toUpperCase()))];
     console.log(`Found active ETF symbols: ${symbols.join(', ')}`);
 
-    // 3. Fetch latest prices from Yahoo Finance
-    const newPrices = {};
-    for (const symbol of symbols) {
-      console.log(`Fetching price for ${symbol}...`);
-      let price = null;
-      
-      // Try up to 3 times
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=1d&interval=1d`;
-          const res = await fetch(url, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            },
-            signal: AbortSignal.timeout(10000) // 10s timeout
-          });
+    const newPrices = { FUSD: 1.00 };
+    const querySymbols = symbols.filter(s => s !== 'FUSD');
 
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const json = await res.json();
-          price = json.chart?.result?.[0]?.meta?.regularMarketPrice;
-          
-          if (price !== null && price !== undefined) {
-            break;
+    // 3. Batch fetch prices from Stooq (for all non-FUSD symbols at once)
+    if (querySymbols.length > 0) {
+      try {
+        console.log(`Performing batch Stooq query for: ${querySymbols.join(', ')}`);
+        const stooqParams = querySymbols.map(s => `${s.toLowerCase()}.us`).join('+');
+        const url = `https://stooq.com/q/l/?s=${stooqParams}&f=sd2t2ohlcv&h&e=csv`;
+        const res = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          },
+          signal: AbortSignal.timeout(10000)
+        });
+        
+        if (res.ok) {
+          const text = await res.text();
+          const lines = text.trim().split('\n');
+          if (lines.length >= 2) {
+            const headers = lines[0].split(',');
+            const symbolIdx = headers.indexOf('Symbol');
+            const closeIdx = headers.indexOf('Close');
+            
+            if (symbolIdx !== -1 && closeIdx !== -1) {
+              for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',');
+                if (parts.length > Math.max(symbolIdx, closeIdx)) {
+                  const stooqSym = parts[symbolIdx].trim().toUpperCase().split('.')[0]; // e.g. "MRVL" from "MRVL.US"
+                  const priceStr = parts[closeIdx].trim();
+                  if (priceStr !== 'N/D') {
+                    const priceNum = parseFloat(priceStr);
+                    if (!isNaN(priceNum) && priceNum > 0) {
+                      newPrices[stooqSym] = Math.round(priceNum * 100) / 100;
+                      console.log(`Batch Resolved ${stooqSym}: $${newPrices[stooqSym]}`);
+                    }
+                  }
+                }
+              }
+            }
           }
-        } catch (e) {
-          console.warn(`Attempt ${attempt} failed for ${symbol}: ${e.message}`);
-          if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 2000));
         }
+      } catch (stooqErr) {
+        console.warn(`Batch Stooq request failed: ${stooqErr.message}`);
       }
+    }
 
-      if (price !== null) {
-        newPrices[symbol] = Math.round(Number(price) * 100) / 100;
-        console.log(`Success: ${symbol} = ${newPrices[symbol]}`);
-      } else {
-        // Fallback to existing price in cache
-        const { data: cached } = await supabase
-          .from('etf_prices')
-          .select('current_price')
-          .eq('symbol', symbol)
-          .single();
-
-        if (cached) {
-          newPrices[symbol] = Number(cached.current_price);
-          console.warn(`Failed to fetch ${symbol}, using cached price: ${newPrices[symbol]}`);
-        } else {
+    // 4. Clean up / Resolve fallbacks for missing symbols
+    for (const symbol of symbols) {
+      if (newPrices[symbol] === undefined) {
+        console.log(`Resolving fallback for missing symbol: ${symbol}`);
+        try {
+          newPrices[symbol] = await resolveSinglePrice(symbol, supabase);
+          console.log(`Fallback resolved ${symbol}: $${newPrices[symbol]}`);
+        } catch (err) {
+          console.error(`Could not resolve price for ${symbol} even via fallbacks: ${err.message}`);
           newPrices[symbol] = 0.00;
-          console.error(`Failed to fetch ${symbol} and no cached price exists!`);
         }
       }
     }
 
-    // 4. Update the etf_prices table in Supabase
+    // 5. Update the etf_prices table in Supabase
     console.log('Updating etf_prices table...');
     const upsertRows = Object.entries(newPrices).map(([symbol, current_price]) => ({
       symbol,
@@ -103,14 +219,26 @@ export default async function handler(request, response) {
 
     if (upsertError) throw upsertError;
 
-    // 5. Fetch current player portfolios & cash to record daily snap shot
+    // 6. Fetch current player portfolios & cash to record daily snapshot
     const { data: players, error: playersError } = await supabase.from('players').select('*');
     if (playersError) throw playersError;
 
     const { data: allBaskets, error: allBasketsError } = await supabase.from('baskets').select('*');
     if (allBasketsError) throw allBasketsError;
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    // Determine current 4-hour snapshot block (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)
+    const now = new Date();
+    const hours = now.getUTCHours();
+    const blockHours = Math.floor(hours / 4) * 4;
+    const snapshotDate = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        blockHours,
+        0, 0, 0
+    ));
+    const snapshotTimeISO = snapshotDate.toISOString();
+
     const historyRows = [];
 
     console.log('Calculating individual portfolio values...');
@@ -126,7 +254,7 @@ export default async function handler(request, response) {
       const portfolioVal = Math.round((Number(player.cash) + stockVal) * 100) / 100;
       
       historyRows.push({
-        date: todayStr,
+        snapshot_time: snapshotTimeISO,
         player_id: player.id,
         portfolio_value: portfolioVal
       });
@@ -134,18 +262,18 @@ export default async function handler(request, response) {
       console.log(`- ${player.name}: $${portfolioVal}`);
     }
 
-    // Write snap shots to history table
-    console.log(`Writing daily history snapshots for ${todayStr}...`);
+    // Write snapshots to history table
+    console.log(`Writing 4-hour history snapshots for ${snapshotTimeISO}...`);
     const { error: historyError } = await supabase
       .from('history')
-      .upsert(historyRows, { onConflict: 'date,player_id' });
+      .upsert(historyRows, { onConflict: 'snapshot_time,player_id' });
 
     if (historyError) throw historyError;
 
     console.log('Update complete!');
     return response.status(200).json({
       success: true,
-      message: `Successfully updated ${symbols.length} ETF prices and added historical entries for ${todayStr}.`,
+      message: `Successfully updated ${symbols.length} ETF prices and added historical entries for ${snapshotTimeISO}.`,
       prices: newPrices
     });
 
