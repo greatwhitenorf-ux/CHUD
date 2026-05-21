@@ -110,10 +110,12 @@ async function resolveSinglePrice(symbol, supabase) {
 }
 
 export default async function handler(request, response) {
-  // 1. Authenticate the Cron request in production
-  if (process.env.NODE_ENV === 'production') {
+  // 1. Authenticate the Cron request in production (only if CRON_SECRET is set in Vercel)
+  if (process.env.NODE_ENV === 'production' && process.env.CRON_SECRET) {
     const authHeader = request.headers.get ? request.headers.get('authorization') : request.headers.authorization;
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const querySecret = request.query?.secret;
+    
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && querySecret !== process.env.CRON_SECRET) {
       return response.status(401).json({ success: false, error: 'Unauthorized' });
     }
   }
